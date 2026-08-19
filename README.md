@@ -17,7 +17,7 @@ Not included: notifications, third-party lead integrations, advanced reporting, 
 
 ## Architecture
 
-Browser (React) to Nginx to the Spring Boot backend to MySQL.
+Browser (React) to Nginx to the Spring Boot backend to PostgreSQL.
 
 ![Architecture diagram](docs/architecture-diagram.png)
 
@@ -29,7 +29,7 @@ Browser (React) to Nginx to the Spring Boot backend to MySQL.
 
 - Frontend: React 18, Vite
 - Backend: Java 17, Spring Boot 3
-- Database: MySQL 8
+- Database: PostgreSQL 16
 - Build: Maven, npm
 - Deploy: Tomcat, Nginx
 - CI/CD: Jenkins
@@ -73,7 +73,7 @@ Week 15: Final release, docs, demo.
 
 ## Setup
 
-You need JDK 17, Maven, Node.js, and a MySQL 8 instance running locally.
+You need JDK 17, Maven, Node.js, and a PostgreSQL 16 instance running locally.
 
 Backend:
 
@@ -94,7 +94,7 @@ Runs on port 5173 and proxies /api calls to the backend.
 
 Database connection settings are in backend/src/main/resources/application.yml, or set these env vars:
 
-    DB_URL=jdbc:mysql://localhost:3306/blms
+    DB_URL=jdbc:postgresql://localhost:5432/blms
     DB_USERNAME=blms_user
     DB_PASSWORD=changeme
 
@@ -104,4 +104,4 @@ See CONTRIBUTING.md for branch naming, commit style, and PR process.
 
 ## License
 
-TBD
+MIT
