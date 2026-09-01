@@ -21,10 +21,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "2rem" }}>
+    <div className="app">
       <h1>Broker Lead Management System</h1>
       <CreateLeadForm onLeadCreated={handleLeadCreated} />
-      <h2>Leads</h2>
       <LeadsList leads={leads} />
     </div>
   );
