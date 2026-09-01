@@ -40,30 +40,34 @@ export default function CreateLeadForm({ onLeadCreated }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginBottom: "2rem" }}>
-      <h2>Add a lead</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <div>
-        <label>Name</label>
-        <input name="name" value={form.name} onChange={handleChange} />
-      </div>
-      <div>
-        <label>Phone</label>
-        <input name="contactPhone" value={form.contactPhone} onChange={handleChange} />
-      </div>
-      <div>
-        <label>Email</label>
-        <input name="contactEmail" value={form.contactEmail} onChange={handleChange} />
-      </div>
-      <div>
-        <label>Source</label>
-        <input name="source" value={form.source} onChange={handleChange} />
-      </div>
-      <div>
-        <label>Notes</label>
-        <textarea name="notes" value={form.notes} onChange={handleChange} />
-      </div>
-      <button type="submit">Create lead</button>
-    </form>
+    <div className="card">
+      <h2>Add a Lead</h2>
+      <form onSubmit={handleSubmit}>
+        {error && <p className="error-msg">{error}</p>}
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Name</label>
+            <input name="name" value={form.name} onChange={handleChange} placeholder="Full name" />
+          </div>
+          <div className="form-group">
+            <label>Phone</label>
+            <input name="contactPhone" value={form.contactPhone} onChange={handleChange} placeholder="Phone number" />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input name="contactEmail" value={form.contactEmail} onChange={handleChange} placeholder="Email address" />
+          </div>
+          <div className="form-group">
+            <label>Source</label>
+            <input name="source" value={form.source} onChange={handleChange} placeholder="e.g. Referral, Website" />
+          </div>
+          <div className="form-group full-width">
+            <label>Notes</label>
+            <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Any additional notes..." />
+          </div>
+        </div>
+        <button type="submit" className="btn-primary">Create Lead</button>
+      </form>
+    </div>
   );
 }
