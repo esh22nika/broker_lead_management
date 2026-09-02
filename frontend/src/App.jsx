@@ -5,6 +5,9 @@ import LeadsList from "./components/LeadsList";
 import SearchBar from "./components/SearchBar";
 import Dashboard from "./components/Dashboard";
 
+// CONFLICT RESOLVED: Combined feature/login-page (auth gate, app-header, logout)
+// with feature/lead-detail-edit (edit/delete handlers, userRole prop on LeadsList).
+
 export default function App() {
   const [user, setUser] = useState(() => {
     try {
@@ -63,12 +66,28 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   }
 
+  // From feature/lead-detail-edit
+  function handleLeadUpdated(updatedLead) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
+    );
+  }
+
+  function handleLeadDeleted(id) {
+    setLeads((prev) => prev.filter((l) => l.id !== id));
+    setRefreshKey((k) => k + 1);
+  }
+
+  // From feature/login-page
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  const userRole = user.role || "MANAGER";
+
   return (
     <div className="app">
+      {/* Resolved: kept app-header from feature/login-page */}
       <div className="app-header">
         <h1>Broker Lead Management System</h1>
         <div className="app-header-right">
@@ -92,7 +111,14 @@ export default function App() {
       <Dashboard key={refreshKey} />
       <CreateLeadForm onLeadCreated={handleLeadCreated} />
       <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
-      <LeadsList leads={leads} onStatusChange={handleStatusChange} />
+      {/* userRole from feature/lead-detail-edit; handlers for edit/delete */}
+      <LeadsList
+        leads={leads}
+        userRole={userRole}
+        onStatusChange={handleStatusChange}
+        onLeadUpdated={handleLeadUpdated}
+        onLeadDeleted={handleLeadDeleted}
+      />
     </div>
   );
 }

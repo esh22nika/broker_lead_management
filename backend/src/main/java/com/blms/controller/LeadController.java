@@ -55,6 +55,14 @@ public class LeadController {
         return ResponseEntity.ok(leadService.searchLeads(q));
     }
 
+    @DeleteMapping("/leads/{id}")
+    public ResponseEntity<Void> deleteLead(@PathVariable Long id) {
+        if (leadService.deleteLead(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @GetMapping("/dashboard/summary")
     public ResponseEntity<DashboardSummary> getDashboardSummary() {
         return ResponseEntity.ok(leadService.getDashboardSummary());
