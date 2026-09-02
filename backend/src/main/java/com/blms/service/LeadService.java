@@ -80,6 +80,14 @@ public class LeadService {
                 .collect(Collectors.toList());
     }
 
+    public boolean deleteLead(Long id) {
+        if (!leadRepository.existsById(id)) {
+            return false;
+        }
+        leadRepository.deleteById(id);
+        return true;
+    }
+
     public DashboardSummary getDashboardSummary() {
         long total = leadRepository.count();
         Map<String, Long> counts = new LinkedHashMap<>();
