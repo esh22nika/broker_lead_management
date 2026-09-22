@@ -1,8 +1,6 @@
 package com.blms.selenium;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -19,11 +17,6 @@ public abstract class SeleniumTestBase {
     protected static final String BASE_URL = "http://localhost:5173";
     protected static final String DEMO_EMAIL = "admin@blms.com";
     protected static final String DEMO_PASSWORD = "admin123";
-
-    @BeforeAll
-    static void setupDriver() {
-        WebDriverManager.chromedriver().setup();
-    }
 
     @BeforeEach
     void setUp() {

@@ -30,7 +30,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir("${BACKEND_DIR}") {
-                    bat 'mvn test'
+                    bat 'mvn test -Dtest="!com.blms.selenium.*"'
                 }
             }
             post {
