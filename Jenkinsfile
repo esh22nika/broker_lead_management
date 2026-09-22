@@ -77,7 +77,7 @@ pipeline {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     dir("${BACKEND_DIR}") {
-                        bat 'mvn test -Dtest="com.blms.selenium.*" -DfailIfNoTests=false'
+                        bat 'mvn test -Pselenium'
                     }
                 }
             }
