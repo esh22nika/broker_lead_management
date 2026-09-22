@@ -30,7 +30,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir("${BACKEND_DIR}") {
-                    bat 'mvn test -Dtest="!com.blms.selenium.*"'
+                    bat 'mvn test'
                 }
             }
             post {
@@ -75,8 +75,10 @@ pipeline {
 
         stage('Selenium Tests') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    bat 'mvn test -Dtest="com.blms.selenium.*" -DfailIfNoTests=false'
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dir("${BACKEND_DIR}") {
+                        bat 'mvn test -Dtest="com.blms.selenium.*" -DfailIfNoTests=false'
+                    }
                 }
             }
             post {
