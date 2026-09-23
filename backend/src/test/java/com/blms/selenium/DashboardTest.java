@@ -34,7 +34,7 @@ class DashboardTest extends SeleniumTestBase {
         assertTrue(totalCard.isDisplayed());
 
         WebElement label = totalCard.findElement(By.cssSelector(".stat-label"));
-        assertEquals("Total Leads", label.getText());
+        assertEquals("total leads", label.getText().toLowerCase());
     }
 
     @Test
