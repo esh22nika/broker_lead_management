@@ -80,6 +80,21 @@ public class LeadService {
                 .collect(Collectors.toList());
     }
 
+    public List<LeadResponse> getLeadsByStatus(LeadStatus status) {
+        return leadRepository.findByStatus(status).stream()
+                .sorted(Comparator.comparing(Lead::getCreatedAt).reversed())
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<LeadResponse> updateLeadStatus(Long id, String statusStr) {
+        return leadRepository.findById(id).map(lead -> {
+            lead.setStatus(LeadStatus.valueOf(statusStr));
+            lead.setUpdatedAt(LocalDateTime.now());
+            return toResponse(leadRepository.save(lead));
+        });
+    }
+
     public boolean deleteLead(Long id) {
         if (!leadRepository.existsById(id)) {
             return false;
@@ -106,6 +121,10 @@ public class LeadService {
                 lead.getSource(),
                 lead.getNotes(),
                 lead.getStatus(),
-                lead.getCreatedAt());
+                lead.getAssignedBrokerId(),
+                lead.getCreatedBy(),
+                lead.getUpdatedBy(),
+                lead.getCreatedAt(),
+                lead.getUpdatedAt());
     }
 }

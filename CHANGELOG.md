@@ -5,6 +5,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0] — 2026-09-29 — Containerization & CI/CD Testing (Weeks 7–11)
+
+### Added
+- **Multi-stage Dockerfiles** for backend (Java 17 JRE) and frontend (React/Nginx) (`backend/Dockerfile`, `frontend/Dockerfile`)
+- **Docker Compose orchestration** (`docker-compose.yml`) for multi-container stack (Postgres 16, Spring Boot, Nginx)
+- **Container lifecycle documentation** (`docs/WEEK_11_DOCKER.md`) with build, run, inspect, and cleanup logs
+- **Real backend authentication** with BCrypt password hashing (`AuthController`, `User`, `UserRepository`)
+- **Admin user management** CRUD endpoints (`UserController`) and UI panel (`UserManagement.jsx`)
+- **Automated test suite**: 10 Unit tests, 10 Integration tests, 15 Selenium WebDriver test cases
+- **Jenkins Declarative Pipeline** (`Jenkinsfile`) with unit tests, artifact archiving, and non-blocking Selenium test stage
+
+---
+
 ## [1.0.0] — 2026-09-02 — MVP Release
 
 ### Added

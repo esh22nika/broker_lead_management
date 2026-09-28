@@ -1,0 +1,389 @@
+BLMS PROJECT DEMO SCRIPT
+========================
+Broker Lead Management System - Full DevOps Walkthrough
+Student: Eshanika Amballa | Roll: 2310B0056 | Branch: CMPN B
+Repo: https://github.com/esh22nika/broker_lead_management
+
+
+====================================================================
+WEEK 1-2: PROBLEM DEFINITION, AGILE PLANNING
+====================================================================
+
+WHAT I DID:
+- Defined the problem: brokers track leads in spreadsheets/email,
+  leads get lost, no visibility for managers, no audit trail
+- Identified 3 target users: Broker, Manager, Admin
+- Froze MVP scope: CRUD leads, role-based workflow, dashboard
+- Created product backlog with 8 user stories (US-01 to US-08)
+- Mapped stories to a 15-week sprint plan
+- Defined Definition of Done: code reviewed, tested, merged, CI green
+
+WHERE TO SHOW IT:
+- Open the Week 1 and Week 2 deliverable documents (Word/PDF)
+- Show the sprint plan Excel with backlog, task board, and timeline
+
+
+====================================================================
+WEEK 3: REQUIREMENTS, ARCHITECTURE, TECHNOLOGY SETUP
+====================================================================
+
+WHAT I DID:
+- Wrote SRS with 9 functional and 7 non-functional requirements
+- Selected tech stack:
+  * Backend:  Java 17, Spring Boot 3, Spring Security, Spring Data JPA
+  * Frontend: React 18 with Vite 5
+  * Database: PostgreSQL 16
+  * Build:    Maven (backend), npm/Vite (frontend)
+  * API:      REST, JSON, versioned under /api/v1/*
+- Defined data model: Lead entity (11 fields), User entity (8 fields)
+- Defined full API list: 16 endpoints across auth, leads, users, health
+- Set up local dev environment, confirmed baseline build runs
+
+WHERE TO SHOW IT:
+- Open the Week 3 deliverable document with architecture diagram
+- Show application.properties for the database config
+- Show pom.xml for Spring Boot dependencies
+
+
+====================================================================
+WEEK 4: GIT AND GITHUB REPOSITORY INITIALIZATION
+====================================================================
+
+WHAT I DID:
+- Created GitHub repo: esh22nika/broker_lead_management
+- Added README with project overview and setup instructions
+- Added .gitignore for Java and Node artifacts
+- Created issue templates (bug report + feature request)
+- Created pull request template
+- Defined branch strategy: main, develop, feature/*, release/*
+- Set up branch protection on main
+- Initial skeleton commit with folder structure
+
+WHERE TO SHOW IT (GitHub UI):
+- Go to repo home page -> show README, .gitignore
+- Settings > Branches -> show branch protection rules on main
+- Go to .github/ISSUE_TEMPLATE/ -> show bug_report.md, feature_request.md
+- Go to .github/pull_request_template.md
+- Click "Branches" dropdown -> show all branches:
+  * main
+  * develop
+  * feature/create-lead
+  * feature/mvp-core
+  * feature/dashboard-ui
+  * feature/login-page
+  * feature/lead-detail-edit
+  * release/v1.0.0
+- Insights > Network -> show the branch graph visually
+
+
+====================================================================
+WEEK 5: FEATURE DEVELOPMENT WITH BRANCHING
+====================================================================
+
+WHAT I DID:
+- Created feature/create-lead branch off develop
+- Implemented Create Lead workflow end-to-end:
+  * Backend: Lead entity, LeadRepository, LeadService, LeadController
+  * POST /api/v1/leads endpoint
+- Made incremental commits with meaningful messages
+- Opened Pull Request #1 into develop
+- Reviewed diff, merged via GitHub
+
+WHERE TO SHOW IT (GitHub UI):
+- Pull Requests > Closed > PR #1 "feat: add create lead workflow"
+- Show the PR diff (Files changed tab)
+- Show the merge commit on develop branch
+- Click on commits in the PR to show incremental work
+
+
+====================================================================
+WEEK 6: MVP COMPLETION AND GIT COLLABORATION
+====================================================================
+
+WHAT I DID:
+- Implemented remaining MVP features on feature branches:
+  * feature/mvp-core: update lead, search, dashboard API + frontend
+  * feature/dashboard-ui: dashboard summary, search bar, status workflow UI
+  * feature/login-page: login page with auth gate and logout
+  * feature/lead-detail-edit: edit modal, delete, role-based status workflow
+- Deliberately created and resolved a merge conflict:
+  * Both feature/login-page and feature/lead-detail-edit edited App.jsx
+  * Resolved conflict in commit 817ab2f
+- Tagged release baseline: v0.1.0 and v1.0.0
+
+FEATURES BUILT:
+- Create, View, Update, Delete leads
+- Search leads by name/email/phone/source
+- Filter leads by status
+- Role-based status workflow:
+  * Broker:  can set NEW, CONTACTED, QUALIFIED only
+  * Manager: can set all 5 statuses (override capability)
+  * Admin:   full access to all statuses
+- Summary dashboard with lead counts by status
+- Secure login with BCrypt password hashing
+- 3 user accounts: Admin, Manager, Broker
+- Role-based UI:
+  * Admin sees:   Dashboard + Create Lead + User Management + all actions
+  * Manager sees: Dashboard + leads list + delete + all statuses
+  * Broker sees:  Create Lead + leads list + limited statuses, no delete
+
+WHERE TO SHOW IT (GitHub UI):
+- Code > Branches -> show all feature branches
+- Show merge commits on develop:
+  * "Merge branch 'feature/mvp-core' into develop"
+  * "Merge branch 'feature/dashboard-ui' into develop"
+- Show the conflict resolution commit:
+  * Click commit 817ab2f -> "fix: resolve merge conflict between
+    feature/login-page and feature/lead-detail-edit in App.jsx"
+  * Show the diff with conflict markers resolved
+- Tags: click "Tags" -> show v0.1.0 and v1.0.0
+
+WHERE TO SHOW IT (Frontend - localhost:5173):
+- Login as admin@blms.com / admin123
+  * Show Dashboard with status counts
+  * Show Create Lead form
+  * Show User Management panel (Admin-only section)
+  * Create a lead, edit it, change status, delete it
+- Logout, login as manager@blms.com / manager123
+  * Show Dashboard visible
+  * Show NO Create Lead form (managers oversee, don't create)
+  * Show NO User Management
+  * Show delete button works, all 5 status options available
+- Logout, login as broker@blms.com / broker123
+  * Show NO Dashboard
+  * Show Create Lead form visible
+  * Show NO User Management
+  * Show NO delete button
+  * Show only 3 status options (NEW, CONTACTED, QUALIFIED)
+  * Show search functionality
+
+
+====================================================================
+WEEK 7-8: JENKINS CI/CD PIPELINE
+====================================================================
+
+WHAT I DID:
+- Installed Jenkins on port 8080 with Git, Maven, Pipeline plugins
+- Connected Jenkins to the GitHub repository
+- Created a declarative Jenkinsfile with 6 stages:
+  1. Checkout    - pulls code from GitHub
+  2. Build Backend  - mvn clean compile -DskipTests
+  3. Unit Tests     - mvn test (runs 20 JUnit + integration tests)
+  4. Package        - mvn package -DskipTests (creates JAR)
+  5. Build Frontend - npm install && npm run build
+  6. Selenium Tests - mvn test -Pselenium (non-blocking, yellow on fail)
+  7. Deploy         - only runs on main branch
+- Configured Jenkins tools: Maven-3.9.16 and JDK-21
+- Used bat commands (Windows environment)
+- Build artifacts archived: blms-backend.jar and frontend dist/
+- Deploy stage skips on develop branch (only deploys from main)
+
+JENKINSFILE KEY FEATURES:
+- catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE')
+  wraps Selenium stage so failing Selenium doesn't fail the whole build
+- junit plugin publishes test reports for trend tracking
+- archiveArtifacts saves the JAR and frontend build
+- cleanWs() in post block cleans workspace after each run
+
+WHERE TO SHOW IT (Jenkins UI - localhost:8080):
+- Open Jenkins dashboard
+- Click on the BLMS pipeline job
+- Show Build History (builds #1 through latest)
+- Click on a successful build:
+  * Show the Stage View (blue/green stages)
+  * Show Console Output (full log)
+  * Show Test Result (20 tests passed)
+  * Show Archived Artifacts (blms-backend.jar)
+- Show the Jenkinsfile in the repo (Pipeline as Code)
+
+WHERE TO SHOW IT (GitHub UI):
+- Open Jenkinsfile in root of repo
+- Walk through each stage explaining what it does
+
+
+====================================================================
+WEEK 9: SELENIUM TEST DESIGN AND LOCAL EXECUTION
+====================================================================
+
+WHAT I DID:
+- Identified 5 critical user journeys to automate:
+  1. Login flow (LoginPageTest)
+  2. Create lead (CreateLeadTest)
+  3. Lead search (LeadSearchTest)
+  4. Status workflow (StatusWorkflowTest)
+  5. Dashboard (DashboardTest)
+- Used Selenium WebDriver 4.25.0 with built-in Selenium Manager
+  (no need for separate WebDriverManager)
+- Created SeleniumTestBase with:
+  * Headless Chrome configuration
+  * Shared login() helper method
+  * WebDriverWait with 10-second timeout
+- All tests use explicit waits, stable element IDs as locators
+- Tests run locally via Maven: mvn test -Pselenium
+- 15 Selenium test cases total covering all critical paths
+
+TEST BREAKDOWN:
+- LoginPageTest (4 tests):
+  * Login page loads with correct title
+  * Login form has email, password, submit button
+  * Successful login redirects to dashboard
+  * Failed login shows error message
+
+- CreateLeadTest (3 tests):
+  * Create lead form is visible after login
+  * Creating a lead adds it to the list
+  * Created lead shows NEW status
+
+- LeadSearchTest (2 tests):
+  * Search bar is visible
+  * Search filters leads by name
+
+- StatusWorkflowTest (3 tests):
+  * Status dropdown is visible
+  * Status can be changed
+  * Status change persists after page reload
+
+- DashboardTest (3 tests):
+  * Dashboard section is visible
+  * Dashboard shows "Total Leads" count
+  * Dashboard updates after creating a lead
+
+WHERE TO SHOW IT (GitHub UI):
+- Navigate to backend/src/test/java/com/blms/selenium/
+- Open each test file and walk through the test logic
+- Show SeleniumTestBase.java for the shared setup
+
+
+====================================================================
+WEEK 10: CONTINUOUS TESTING IN JENKINS
+====================================================================
+
+WHAT I DID:
+- Added Selenium Tests stage to Jenkinsfile
+- Used Maven profile (-Pselenium) to run only Selenium tests
+- Configured Surefire plugin with excludes so unit tests skip Selenium:
+  * Default build: excludes **/selenium/**
+  * Selenium profile: overrides excludes, includes only selenium/*
+- Made Selenium stage non-blocking with catchError:
+  * If Selenium fails -> stage is YELLOW/UNSTABLE, build still GREEN
+  * This is correct because Selenium needs running app + browser
+- Published test reports via JUnit plugin for trend tracking
+- Debugged and fixed DashboardTest case-sensitivity issue:
+  * CSS text-transform: uppercase made browser return "TOTAL LEADS"
+  * Fixed assertion to use .toLowerCase() comparison
+
+WHERE TO SHOW IT (Jenkins UI):
+- Show a build where Selenium ran (build #10+)
+- Show the Stage View with the Selenium stage in yellow
+- Show Test Result Trend graph
+- Show the build is still GREEN overall despite Selenium yellow
+- Explain: Selenium is yellow because Jenkins doesn't have a running
+  frontend/backend, but locally all 15 tests pass
+
+
+====================================================================
+WEEK 10 (CURRENT): MVP REFINEMENTS
+====================================================================
+
+WHAT I DID:
+- Implemented real backend authentication:
+  * AuthController with POST /api/v1/auth/login
+  * BCrypt password hashing via Spring Security
+  * POST /api/v1/auth/logout endpoint
+- Created 3 seed users via DataLoader (runs on startup):
+  * admin@blms.com / admin123 (ADMIN role)
+  * manager@blms.com / manager123 (MANAGER role)
+  * broker@blms.com / broker123 (BROKER role)
+- Built complete User Management (Admin CRUD):
+  * GET /api/v1/users - list all users
+  * POST /api/v1/users - create user
+  * PUT /api/v1/users/{id} - update user
+  * DELETE /api/v1/users/{id} - deactivate (soft delete)
+- Added health endpoint: GET /api/v1/health
+- Added PATCH /api/v1/leads/{id}/status for status-only updates
+- Added status filter: GET /api/v1/leads?status=NEW
+- Added audit fields to Lead: assignedBrokerId, createdBy, updatedBy
+- Added active flag and createdAt to User entity
+- Built UserManagement.jsx component (Admin-only UI panel)
+- Implemented role-based UI visibility in App.jsx
+
+BACKEND API SUMMARY (matches Week 3 SRS):
+  POST   /api/v1/auth/login        - authenticate user
+  POST   /api/v1/auth/logout       - end session
+  GET    /api/v1/leads             - list leads (optional ?status= filter)
+  GET    /api/v1/leads/{id}        - get single lead
+  POST   /api/v1/leads             - create lead
+  PUT    /api/v1/leads/{id}        - update lead
+  PATCH  /api/v1/leads/{id}/status - update status only
+  DELETE /api/v1/leads/{id}        - delete lead
+  GET    /api/v1/leads/search?q=   - search leads
+  GET    /api/v1/dashboard/summary - dashboard counts
+  GET    /api/v1/users             - list users (Admin)
+  POST   /api/v1/users             - create user (Admin)
+  PUT    /api/v1/users/{id}        - update user (Admin)
+  DELETE /api/v1/users/{id}        - deactivate user (Admin)
+  GET    /api/v1/health            - health check
+
+TEST SUITE SUMMARY:
+- 10 unit tests (LeadServiceTest with Mockito)
+- 10 integration tests (LeadControllerIntegrationTest with MockMvc + H2)
+- 15 Selenium tests (5 test classes covering critical journeys)
+- All 20 JUnit/integration tests pass in CI
+- All 15 Selenium tests pass locally with running app
+
+
+====================================================================
+WEEKS 11-15: REMAINING (NOT YET DONE)
+====================================================================
+
+Week 11: Docker Image and Container Lifecycle
+  - Write Dockerfile, build/tag image, run container, inspect logs
+
+Week 12: Jenkins-Docker Continuous Deployment
+  - Add Docker build stage to Jenkinsfile, push to registry, auto-deploy
+
+Week 13: Configuration Management Script
+  - Ansible playbook or Puppet manifest for server prerequisites
+
+Week 14: Automated Provisioning and Reliability Validation
+  - Prove idempotency, health checks, rollback
+
+Week 15: Final End-to-End Release, Documentation, and Viva
+  - Live demo of full toolchain: commit -> build -> test -> deploy
+
+
+====================================================================
+HOW TO START THE APP FOR LIVE DEMO
+====================================================================
+
+1. Start PostgreSQL (should already be running as a service)
+
+2. Start backend (from project root):
+   cd backend
+   mvn package -DskipTests
+   java -jar target\blms-backend.jar
+   (Backend runs on port 8081)
+
+3. Start frontend (new terminal, from project root):
+   cd frontend
+   npm run dev
+   (Frontend runs on port 5173)
+
+4. Open browser: http://localhost:5173
+
+5. Demo credentials:
+   Admin:   admin@blms.com   / admin123
+   Manager: manager@blms.com / manager123
+   Broker:  broker@blms.com  / broker123
+
+
+====================================================================
+KEY GITHUB URLS TO OPEN DURING DEMO
+====================================================================
+
+Repo:        https://github.com/esh22nika/broker_lead_management
+Branches:    https://github.com/esh22nika/broker_lead_management/branches
+Tags:        https://github.com/esh22nika/broker_lead_management/tags
+PR #1:       https://github.com/esh22nika/broker_lead_management/pull/1
+Network:     https://github.com/esh22nika/broker_lead_management/network
+Jenkinsfile: https://github.com/esh22nika/broker_lead_management/blob/develop/Jenkinsfile

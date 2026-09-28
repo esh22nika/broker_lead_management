@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: blms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: blms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d blms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blms-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: blms-backend:v1.0.0
+    container_name: blms-backend-container
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/blms
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - blms-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: blms-frontend:v1.0.0
+    container_name: blms-frontend-container
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "3000:80"
+    networks:
+      - blms-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  blms-network:
+    driver: bridge
