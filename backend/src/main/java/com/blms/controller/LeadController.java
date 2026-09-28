@@ -4,12 +4,14 @@ import com.blms.dto.CreateLeadRequest;
 import com.blms.dto.DashboardSummary;
 import com.blms.dto.LeadResponse;
 import com.blms.dto.UpdateLeadRequest;
+import com.blms.model.LeadStatus;
 import com.blms.service.LeadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -31,7 +33,16 @@ public class LeadController {
     }
 
     @GetMapping("/leads")
-    public ResponseEntity<List<LeadResponse>> getLeads() {
+    public ResponseEntity<List<LeadResponse>> getLeads(
+            @RequestParam(required = false) String status) {
+        if (status != null && !status.isBlank()) {
+            try {
+                LeadStatus ls = LeadStatus.valueOf(status.toUpperCase());
+                return ResponseEntity.ok(leadService.getLeadsByStatus(ls));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
         return ResponseEntity.ok(leadService.getAllLeads());
     }
 
@@ -50,6 +61,22 @@ public class LeadController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PatchMapping("/leads/{id}/status")
+    public ResponseEntity<LeadResponse> updateLeadStatus(@PathVariable Long id,
+                                                          @RequestBody Map<String, String> body) {
+        String status = body.get("status");
+        if (status == null || status.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            return leadService.updateLeadStatus(id, status.toUpperCase())
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/leads/search")
     public ResponseEntity<List<LeadResponse>> searchLeads(@RequestParam String q) {
         return ResponseEntity.ok(leadService.searchLeads(q));
@@ -66,5 +93,10 @@ public class LeadController {
     @GetMapping("/dashboard/summary")
     public ResponseEntity<DashboardSummary> getDashboardSummary() {
         return ResponseEntity.ok(leadService.getDashboardSummary());
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "UP"));
     }
 }

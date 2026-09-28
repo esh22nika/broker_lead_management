@@ -17,23 +17,24 @@ Updated: 2026-09-02
 | US-07 | As a broker, I can edit all fields of an existing lead | feature/lead-detail-edit | v1.0.0 |
 | US-08 | As a manager, I can delete a lead record | feature/lead-detail-edit | v1.0.0 |
 | US-09 | As a manager, I can set a lead to Converted or Lost; brokers cannot | feature/lead-detail-edit | v1.0.0 |
+| US-10 | As a user, real BCrypt authentication and role-based access control | feature/auth-refinement | v1.1.0 |
+| US-11 | As ops, Jenkins CI job runs automated build & JUnit test suites on every commit | feature/jenkins-ci | v1.1.0 |
+| US-12 | As ops, declarative Jenkinsfile controls build, test, and artifact packaging | feature/jenkins-ci | v1.1.0 |
+| US-13 | As QA, automated Selenium WebDriver test suite covers critical user journeys | feature/selenium-testing | v1.1.0 |
+| US-14 | As ops, multi-stage Dockerfiles package backend and frontend into versioned containers | feature/docker-container-lifecycle | v1.1.0 |
 
 ---
 
-## 🔜 Post-MVP Backlog (Week 7+)
+## 🔜 Post-MVP Backlog (Week 12+)
 
 | ID | Priority | Story | Target Week |
 |----|----------|-------|-------------|
-| US-10 | High | As a user, JWT-based authentication with real credential verification | Week 8 |
-| US-11 | High | As ops, Jenkins CI job runs on every push to develop | Week 7 |
-| US-12 | High | As ops, pipeline-as-code (Jenkinsfile) controls build + test + deploy | Week 8 |
-| US-13 | Medium | As a user, Selenium end-to-end tests cover create, search, and status change | Week 9 |
-| US-14 | Medium | As ops, Docker image built and run via Jenkins | Week 12 |
-| US-15 | Medium | As ops, Ansible/Puppet script provisions and deploys the stack | Week 13 |
-| US-16 | Low | As a manager, export leads to CSV | Post-MVP |
-| US-17 | Low | As a broker, receive email notification when a lead is assigned | Post-MVP |
-| US-18 | Low | As an admin, manage user accounts and roles | Post-MVP |
-| US-19 | Low | Multi-branch (office) support | Post-MVP |
+| US-15 | High | As ops, Jenkins-Docker CD pipeline builds and pushes images to registry | Week 12 |
+| US-16 | High | As ops, Ansible/Puppet playbook automates server prerequisite configuration | Week 13 |
+| US-17 | High | As ops, automated provisioning, idempotency validation, and rollback mechanism | Week 14 |
+| US-18 | Medium | As a manager, export leads to CSV | Week 15 |
+| US-19 | Low | As a broker, receive email notification when a lead is assigned | Post-MVP |
+| US-20 | Low | Multi-branch (office) support | Post-MVP |
 
 ---
 

@@ -20,36 +20,23 @@ export default function LoginPage({ onLogin }) {
       });
 
       if (!res.ok) {
-        // Fallback: accept hardcoded demo credentials if backend has no auth yet
-        if (email === "admin@blms.com" && password === "admin123") {
-          const token = btoa(`${email}:${Date.now()}`);
-          localStorage.setItem("blms_token", token);
-          localStorage.setItem("blms_user", JSON.stringify({ email, name: "Admin User" }));
-          onLogin({ email, name: "Admin User" });
-          return;
-        }
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || data.error || `Login failed (${res.status})`);
+        throw new Error(data.error || `Login failed (${res.status})`);
       }
 
       const data = await res.json();
-      const token = data.token || data.access_token || btoa(`${email}:${Date.now()}`);
-      localStorage.setItem("blms_token", token);
-      localStorage.setItem("blms_user", JSON.stringify(data.user || { email }));
-      onLogin(data.user || { email });
+      localStorage.setItem("blms_user", JSON.stringify(data));
+      onLogin(data);
     } catch (err) {
-      // Fallback demo login
-      if (email === "admin@blms.com" && password === "admin123") {
-        const token = btoa(`${email}:${Date.now()}`);
-        localStorage.setItem("blms_token", token);
-        localStorage.setItem("blms_user", JSON.stringify({ email, name: "Admin User" }));
-        onLogin({ email, name: "Admin User" });
-        return;
-      }
       setError(err.message || "Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function fillCredentials(demoEmail, demoPassword) {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
   }
 
   return (
@@ -80,7 +67,7 @@ export default function LoginPage({ onLogin }) {
               <input
                 id="login-email"
                 type="email"
-                placeholder="admin@blms.com"
+                placeholder="you@blms.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -160,17 +147,33 @@ export default function LoginPage({ onLogin }) {
           </button>
         </form>
 
-        {/* Demo hint */}
+        {/* Demo credentials */}
         <div className="login-demo">
-          <span className="login-demo-label">Demo credentials</span>
+          <span className="login-demo-label">Demo accounts</span>
           <div className="login-demo-creds">
             <span
               className="login-demo-chip"
               title="Click to fill"
-              onClick={() => { setEmail("admin@blms.com"); setPassword("admin123"); }}
+              onClick={() => fillCredentials("admin@blms.com", "admin123")}
               style={{ cursor: "pointer" }}
             >
-              admin@blms.com / admin123
+              Admin: admin@blms.com / admin123
+            </span>
+            <span
+              className="login-demo-chip"
+              title="Click to fill"
+              onClick={() => fillCredentials("manager@blms.com", "manager123")}
+              style={{ cursor: "pointer" }}
+            >
+              Manager: manager@blms.com / manager123
+            </span>
+            <span
+              className="login-demo-chip"
+              title="Click to fill"
+              onClick={() => fillCredentials("broker@blms.com", "broker123")}
+              style={{ cursor: "pointer" }}
+            >
+              Broker: broker@blms.com / broker123
             </span>
           </div>
         </div>

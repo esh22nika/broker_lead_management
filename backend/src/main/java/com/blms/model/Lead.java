@@ -27,6 +27,12 @@ public class Lead {
     @Column(nullable = false)
     private LeadStatus status;
 
+    private Long assignedBrokerId;
+
+    private Long createdBy;
+
+    private Long updatedBy;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -85,6 +91,30 @@ public class Lead {
 
     public void setStatus(LeadStatus status) {
         this.status = status;
+    }
+
+    public Long getAssignedBrokerId() {
+        return assignedBrokerId;
+    }
+
+    public void setAssignedBrokerId(Long assignedBrokerId) {
+        this.assignedBrokerId = assignedBrokerId;
+    }
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
     }
 
     public LocalDateTime getCreatedAt() {

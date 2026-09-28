@@ -4,9 +4,7 @@ import CreateLeadForm from "./components/CreateLeadForm";
 import LeadsList from "./components/LeadsList";
 import SearchBar from "./components/SearchBar";
 import Dashboard from "./components/Dashboard";
-
-// CONFLICT RESOLVED: Combined feature/login-page (auth gate, app-header, logout)
-// with feature/lead-detail-edit (edit/delete handlers, userRole prop on LeadsList).
+import UserManagement from "./components/UserManagement";
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -37,7 +35,7 @@ export default function App() {
   }
 
   function handleLogout() {
-    localStorage.removeItem("blms_token");
+    fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
     localStorage.removeItem("blms_user");
     setUser(null);
     setLeads([]);
@@ -66,7 +64,6 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   }
 
-  // From feature/lead-detail-edit
   function handleLeadUpdated(updatedLead) {
     setLeads((prev) =>
       prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
@@ -78,19 +75,24 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   }
 
-  // From feature/login-page
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  const userRole = user.role || "MANAGER";
+  const userRole = user.role || "BROKER";
+  const isAdmin = userRole === "ADMIN";
+  const isManager = userRole === "MANAGER";
+  const isBroker = userRole === "BROKER";
+  const canDelete = isAdmin || isManager;
 
   return (
     <div className="app">
-      {/* Resolved: kept app-header from feature/login-page */}
       <div className="app-header">
         <h1>Broker Lead Management System</h1>
         <div className="app-header-right">
+          <span className={`app-role-badge role-${userRole.toLowerCase()}`}>
+            {userRole}
+          </span>
           <span className="app-user-badge">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="8" r="4" />
@@ -108,13 +110,21 @@ export default function App() {
           </button>
         </div>
       </div>
-      <Dashboard key={refreshKey} />
-      <CreateLeadForm onLeadCreated={handleLeadCreated} />
+
+      {/* Dashboard: visible to Manager and Admin */}
+      {(isManager || isAdmin) && <Dashboard key={refreshKey} />}
+
+      {/* Create Lead: visible to Broker and Admin */}
+      {(isBroker || isAdmin) && <CreateLeadForm onLeadCreated={handleLeadCreated} />}
+
+      {/* User Management: Admin only */}
+      {isAdmin && <UserManagement />}
+
       <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
-      {/* userRole from feature/lead-detail-edit; handlers for edit/delete */}
       <LeadsList
         leads={leads}
         userRole={userRole}
+        canDelete={canDelete}
         onStatusChange={handleStatusChange}
         onLeadUpdated={handleLeadUpdated}
         onLeadDeleted={handleLeadDeleted}
