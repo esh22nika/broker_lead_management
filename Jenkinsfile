@@ -125,7 +125,7 @@ pipeline {
                     bat 'docker compose down || ver > nul'
                     bat 'docker compose up -d --remove-orphans'
                     echo 'Verifying deployment health...'
-                    bat 'timeout /t 5 > nul'
+                    bat 'powershell -NoProfile -Command "Start-Sleep -Seconds 5"'
                     bat 'curl -f http://localhost:8081/api/v1/health || ver > nul'
                     echo 'Deployment complete and verified.'
                 }
