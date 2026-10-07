@@ -227,7 +227,7 @@ export default function LeadsList({
           {onOpenCreateModal && (
             <button
               type="button"
-              className="btn-primary btn-sm"
+              className="btn-accent btn-sm"
               onClick={onOpenCreateModal}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -312,7 +312,7 @@ export default function LeadsList({
               : "Try adjusting your search query or status filter to see other records."}
           </p>
           {onOpenCreateModal && (
-            <button type="button" className="btn-primary" onClick={onOpenCreateModal}>
+            <button type="button" className="btn-accent" onClick={onOpenCreateModal}>
               + Capture First Lead
             </button>
           )}

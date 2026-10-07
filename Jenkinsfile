@@ -121,6 +121,7 @@ pipeline {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     echo 'Deploying fresh containerized stack via Docker Compose...'
+                    bat 'for /f "tokens=5" %%a in (\'netstat -aon ^| findstr :8081 ^| findstr LISTENING\') do taskkill /f /pid %%a || ver > nul'
                     bat 'docker compose down || ver > nul'
                     bat 'docker compose up -d --remove-orphans'
                     echo 'Verifying deployment health...'
