@@ -5,6 +5,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0] — 2026-10-07 — Automated Provisioning & Reliability (Week 14)
+
+### Added
+- **Application Deployment Playbook** (`ansible/deploy-playbook.yml`) orchestrating multi-container stack and automated health check gates
+- **Automated Rollback Playbook** (`ansible/rollback-playbook.yml`) executing disaster recovery and safe rollback to stable baseline (`v1.2.0`)
+- **Idempotency Proof & Validation** demonstrating zero redundant modifications (`changed=0`) on consecutive runs
+- **Reliability & Health Check Verification Documentation** (`docs/WEEK_14_PROVISIONING_AND_RELIABILITY.md`) covering deep health checks and recovery logs
+
+---
+
 ## [1.3.0] — 2026-10-07 — Configuration Management with Ansible (Week 13)
 
 ### Added
