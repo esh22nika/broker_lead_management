@@ -1,0 +1,160 @@
+---
+# ====================================================================
+# Broker Lead Management System (BLMS) - Server Provisioning Playbook
+# Week 13 Deliverable: Configuration Management
+# Target OS: Ubuntu 22.04 / 24.04 LTS (Debian family)
+# ====================================================================
+
+- name: Provision and Configure BLMS Production Environment
+  hosts: blms_servers, local
+  become: true
+  gather_facts: true
+
+  vars:
+    app_root_dir: /opt/blms
+    app_user: blmsuser
+    app_group: blmsgroup
+    backend_port: 8081
+    frontend_port: 80
+    db_port: 5432
+    required_packages:
+      - curl
+      - git
+      - ufw
+      - net-tools
+      - jq
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - openjdk-17-jre-headless
+      - docker.io
+      - docker-compose-v2
+
+  tasks:
+
+    # ------------------------------------------------------------------
+    # 1. SYSTEM UPDATES & PACKAGE PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required server packages
+      apt:
+        name: "{{ required_packages }}"
+        state: present
+
+    # ------------------------------------------------------------------
+    # 2. USER & GROUP PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Create application service group
+      group:
+        name: "{{ app_group }}"
+        state: present
+        system: yes
+
+    - name: Create non-root application service user
+      user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        groups:
+          - docker
+        append: yes
+        shell: /bin/bash
+        home: "/home/{{ app_user }}"
+        create_home: yes
+        system: yes
+        state: present
+
+    # ------------------------------------------------------------------
+    # 3. DIRECTORY HIERARCHY PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Create BLMS application folder structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0755'
+      loop:
+        - "{{ app_root_dir }}"
+        - "{{ app_root_dir }}/config"
+        - "{{ app_root_dir }}/data"
+        - "{{ app_root_dir }}/data/postgres"
+        - "{{ app_root_dir }}/logs"
+        - "{{ app_root_dir }}/logs/backend"
+        - "{{ app_root_dir }}/logs/nginx"
+        - "{{ app_root_dir }}/deploy"
+
+    # ------------------------------------------------------------------
+    # 4. CONFIGURATION FILES & TEMPLATES PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Deploy application environment configuration
+      copy:
+        dest: "{{ app_root_dir }}/config/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0600'
+        content: |
+          # BLMS Environment Configuration
+          SPRING_PROFILES_ACTIVE=prod
+          SERVER_PORT={{ backend_port }}
+          SPRING_DATASOURCE_URL=jdbc:postgresql://blms-postgres:5432/blms
+          SPRING_DATASOURCE_USERNAME=postgres
+          SPRING_DATASOURCE_PASSWORD=root
+          SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+    - name: Configure logrotate for BLMS application logs
+      copy:
+        dest: /etc/logrotate.d/blms
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          {{ app_root_dir }}/logs/backend/*.log {
+              daily
+              missingok
+              rotate 14
+              compress
+              delaycompress
+              notifempty
+              create 0640 {{ app_user }} {{ app_group }}
+          }
+
+    # ------------------------------------------------------------------
+    # 5. FIREWALL & PORT PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Configure UFW firewall rules for application ports
+      ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment }}"
+      loop:
+        - { port: '22', proto: 'tcp', comment: 'SSH Access' }
+        - { port: "{{ frontend_port }}", proto: 'tcp', comment: 'BLMS Nginx Web Frontend' }
+        - { port: "{{ backend_port }}", proto: 'tcp', comment: 'BLMS Spring Boot REST API' }
+
+    # ------------------------------------------------------------------
+    # 6. SERVICE MANAGEMENT PREREQUISITES
+    # ------------------------------------------------------------------
+    - name: Ensure Docker daemon service is enabled and running
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Verify Docker service is responsive
+      command: docker info
+      register: docker_info
+      changed_when: false
+
+    - name: Display provisioning summary
+      debug:
+        msg:
+          - "BLMS server node provisioned successfully."
+          - "App root: {{ app_root_dir }}"
+          - "Service user: {{ app_user }}:{{ app_group }}"
+          - "Listening ports: HTTP ({{ frontend_port }}), API ({{ backend_port }}), DB ({{ db_port }})"
+          - "Docker status: Active and responsive"

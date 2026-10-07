@@ -5,6 +5,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] — 2026-10-07 — Configuration Management with Ansible (Week 13)
+
+### Added
+- **Ansible Provisioning Playbook** (`ansible/playbook.yml`) codifying all target server prerequisites: packages, users, folders, files, ports, and services
+- **Ansible Inventory Specification** (`ansible/inventory.ini`) targeting production, staging, and local environments
+- **Ansible Configuration** (`ansible/ansible.cfg`) tuning SSH transport, privilege escalation, and output formatting
+- **Server Prerequisites Matrix Documentation** (`docs/WEEK_13_CONFIGURATION_MANAGEMENT.md`) detailing the full environment specification and first execution log
+- **Enterprise CRM UI Revamp & Indian Localization** across frontend with self-service registration, role-permission banners, and MagicBricks/99acres sources
+
+---
+
 ## [1.2.0] — 2026-10-06 — Continuous Deployment with Docker (Week 12)
 
 ### Added

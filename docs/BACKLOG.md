@@ -23,14 +23,14 @@ Updated: 2026-09-02
 | US-13 | As QA, automated Selenium WebDriver test suite covers critical user journeys | feature/selenium-testing | v1.1.0 |
 | US-14 | As ops, multi-stage Dockerfiles package backend and frontend into versioned containers | feature/docker-container-lifecycle | v1.1.0 |
 | US-15 | As ops, Jenkins-Docker CD pipeline builds, tags, publishes images, and redeploys containers | feature/jenkins-docker-cd | v1.2.0 |
+| US-16 | As ops, Ansible inventory and YAML playbook automate server prerequisite configuration | feature/ansible-config-management | v1.3.0 |
 
 ---
 
-## 🔜 Post-MVP Backlog (Week 13+)
+## 🔜 Post-MVP Backlog (Week 14+)
 
 | ID | Priority | Story | Target Week |
 |----|----------|-------|-------------|
-| US-16 | High | As ops, Ansible/Puppet playbook automates server prerequisite configuration | Week 13 |
 | US-17 | High | As ops, automated provisioning, idempotency validation, and rollback mechanism | Week 14 |
 | US-18 | Medium | As a manager, export leads to CSV | Week 15 |
 | US-19 | Low | As a broker, receive email notification when a lead is assigned | Post-MVP |
