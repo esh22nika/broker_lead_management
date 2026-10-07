@@ -404,7 +404,7 @@ export default function LeadsList({
                   {/* Role-guarded Status Dropdown */}
                   <td>
                     <select
-                      className={`status-select-pill status-${lead.status}`}
+                      className={`status-select status-select-pill status-${lead.status}`}
                       value={lead.status}
                       onChange={(e) => handleStatusUpdate(lead.id, e.target.value)}
                     >

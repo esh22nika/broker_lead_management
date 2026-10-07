@@ -4,6 +4,8 @@ import LeadsList from "./components/LeadsList";
 import Dashboard from "./components/Dashboard";
 import UserManagement from "./components/UserManagement";
 import CreateLeadModal from "./components/CreateLeadModal";
+import CreateLeadForm from "./components/CreateLeadForm";
+import SearchBar from "./components/SearchBar";
 
 // Initial realistic Indian real-estate sample leads (used when backend is offline or fresh)
 const INITIAL_DEMO_LEADS = [
@@ -167,6 +169,32 @@ export default function App() {
     showToast("Lead record removed.");
   }
 
+  function handleSearch(query) {
+    fetch(`/api/v1/leads/search?q=${encodeURIComponent(query)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setLeads(data);
+      })
+      .catch(() => {
+        const q = query.toLowerCase();
+        setLeads((prev) =>
+          prev.filter(
+            (l) =>
+              (l.name && l.name.toLowerCase().includes(q)) ||
+              (l.contactEmail && l.contactEmail.toLowerCase().includes(q)) ||
+              (l.source && l.source.toLowerCase().includes(q))
+          )
+        );
+      });
+  }
+
+  function handleClearSearch() {
+    loadLeads();
+  }
+
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -314,6 +342,20 @@ export default function App() {
         {/* Core CRM Pipeline View */}
         {activeTab === "pipeline" && (
           <div className="tab-pane-content">
+            {/* Embedded Dashboard metrics */}
+            <Dashboard
+              key={refreshKey}
+              onFilterStatus={() => setActiveTab("pipeline")}
+            />
+
+            {/* Quick Lead Capture inline form */}
+            {(isBroker || isAdmin) && (
+              <CreateLeadForm onLeadCreated={handleLeadCreated} />
+            )}
+
+            {/* Search Bar */}
+            <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+
             <LeadsList
               leads={leads}
               userRole={userRole}

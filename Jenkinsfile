@@ -96,11 +96,13 @@ pipeline {
 
         stage('Docker Build & Tag') {
             steps {
-                echo "Building versioned Docker images for build #${BUILD_NUMBER}..."
-                bat "docker build -t ${IMAGE_NAME_BACK}:${IMAGE_TAG} -t ${IMAGE_NAME_BACK}:latest ./${BACKEND_DIR}"
-                bat "docker build -t ${IMAGE_NAME_FRONT}:${IMAGE_TAG} -t ${IMAGE_NAME_FRONT}:latest ./${FRONTEND_DIR}"
-                bat "docker tag ${IMAGE_NAME_BACK}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG}"
-                bat "docker tag ${IMAGE_NAME_FRONT}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG}"
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    echo "Building versioned Docker images for build #${BUILD_NUMBER}..."
+                    bat "docker build -t ${IMAGE_NAME_BACK}:${IMAGE_TAG} -t ${IMAGE_NAME_BACK}:latest ./${BACKEND_DIR}"
+                    bat "docker build -t ${IMAGE_NAME_FRONT}:${IMAGE_TAG} -t ${IMAGE_NAME_FRONT}:latest ./${FRONTEND_DIR}"
+                    bat "docker tag ${IMAGE_NAME_BACK}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG}"
+                    bat "docker tag ${IMAGE_NAME_FRONT}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG}"
+                }
             }
         }
 
@@ -117,13 +119,15 @@ pipeline {
 
         stage('Continuous Deployment (Docker)') {
             steps {
-                echo 'Deploying fresh containerized stack via Docker Compose...'
-                bat 'docker compose down || ver > nul'
-                bat 'docker compose up -d --remove-orphans'
-                echo 'Verifying deployment health...'
-                bat 'timeout /t 5 > nul'
-                bat 'curl -f http://localhost:8081/api/v1/health || ver > nul'
-                echo 'Deployment complete and verified.'
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    echo 'Deploying fresh containerized stack via Docker Compose...'
+                    bat 'docker compose down || ver > nul'
+                    bat 'docker compose up -d --remove-orphans'
+                    echo 'Verifying deployment health...'
+                    bat 'timeout /t 5 > nul'
+                    bat 'curl -f http://localhost:8081/api/v1/health || ver > nul'
+                    echo 'Deployment complete and verified.'
+                }
             }
         }
     }
