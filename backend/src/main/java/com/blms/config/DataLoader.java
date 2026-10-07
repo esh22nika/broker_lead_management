@@ -22,7 +22,7 @@ public class DataLoader implements CommandLineRunner {
     public void run(String... args) {
         if (userRepository.count() == 0) {
             User admin = new User();
-            admin.setName("Admin User");
+            admin.setName("System Admin");
             admin.setEmail("admin@blms.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(UserRole.ADMIN);
@@ -30,7 +30,7 @@ public class DataLoader implements CommandLineRunner {
             userRepository.save(admin);
 
             User manager = new User();
-            manager.setName("Mike Manager");
+            manager.setName("Rajesh Sharma");
             manager.setEmail("manager@blms.com");
             manager.setPassword(passwordEncoder.encode("manager123"));
             manager.setRole(UserRole.MANAGER);
@@ -38,7 +38,7 @@ public class DataLoader implements CommandLineRunner {
             userRepository.save(manager);
 
             User broker = new User();
-            broker.setName("Sarah Broker");
+            broker.setName("Priya Patel");
             broker.setEmail("broker@blms.com");
             broker.setPassword(passwordEncoder.encode("broker123"));
             broker.setRole(UserRole.BROKER);
