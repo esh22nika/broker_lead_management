@@ -22,14 +22,14 @@ Updated: 2026-09-02
 | US-12 | As ops, declarative Jenkinsfile controls build, test, and artifact packaging | feature/jenkins-ci | v1.1.0 |
 | US-13 | As QA, automated Selenium WebDriver test suite covers critical user journeys | feature/selenium-testing | v1.1.0 |
 | US-14 | As ops, multi-stage Dockerfiles package backend and frontend into versioned containers | feature/docker-container-lifecycle | v1.1.0 |
+| US-15 | As ops, Jenkins-Docker CD pipeline builds, tags, publishes images, and redeploys containers | feature/jenkins-docker-cd | v1.2.0 |
 
 ---
 
-## 🔜 Post-MVP Backlog (Week 12+)
+## 🔜 Post-MVP Backlog (Week 13+)
 
 | ID | Priority | Story | Target Week |
 |----|----------|-------|-------------|
-| US-15 | High | As ops, Jenkins-Docker CD pipeline builds and pushes images to registry | Week 12 |
 | US-16 | High | As ops, Ansible/Puppet playbook automates server prerequisite configuration | Week 13 |
 | US-17 | High | As ops, automated provisioning, idempotency validation, and rollback mechanism | Week 14 |
 | US-18 | Medium | As a manager, export leads to CSV | Week 15 |

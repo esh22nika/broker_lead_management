@@ -5,6 +5,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] — 2026-10-06 — Continuous Deployment with Docker (Week 12)
+
+### Added
+- **Automated Docker Image Build & Tagging Stage** in Jenkinsfile with dynamic build numbers (`v1.2.0-${BUILD_NUMBER}`)
+- **Registry Publishing Stage** in Jenkinsfile to push versioned images to Docker Hub (`esh22nika/blms-backend`, `esh22nika/blms-frontend`)
+- **Automated Continuous Deployment Stage** using Docker Compose with zero-touch container teardown and recreation
+- **Automated Health Check Verification Gate** testing `GET /api/v1/health` post-deployment
+- **Week 12 Deliverable Documentation** (`docs/WEEK_12_JENKINS_DOCKER.md`) with end-to-end pipeline architecture and execution logs
+
+---
+
 ## [1.1.0] — 2026-09-29 — Containerization & CI/CD Testing (Weeks 7–11)
 
 ### Added

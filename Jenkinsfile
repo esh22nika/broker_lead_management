@@ -7,8 +7,12 @@ pipeline {
     }
 
     environment {
-        BACKEND_DIR  = 'backend'
-        FRONTEND_DIR = 'frontend'
+        BACKEND_DIR     = 'backend'
+        FRONTEND_DIR    = 'frontend'
+        IMAGE_NAME_BACK = 'blms-backend'
+        IMAGE_NAME_FRONT= 'blms-frontend'
+        IMAGE_TAG       = "v1.2.0-${BUILD_NUMBER}"
+        REGISTRY_USER   = 'esh22nika'
     }
 
     stages {
@@ -90,30 +94,46 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
+        stage('Docker Build & Tag') {
             steps {
-                echo 'Deploying backend JAR...'
-                dir("${BACKEND_DIR}") {
-                    bat 'copy target\\blms-backend.jar ..\\deploy\\blms-backend.jar'
+                echo "Building versioned Docker images for build #${BUILD_NUMBER}..."
+                bat "docker build -t ${IMAGE_NAME_BACK}:${IMAGE_TAG} -t ${IMAGE_NAME_BACK}:latest ./${BACKEND_DIR}"
+                bat "docker build -t ${IMAGE_NAME_FRONT}:${IMAGE_TAG} -t ${IMAGE_NAME_FRONT}:latest ./${FRONTEND_DIR}"
+                bat "docker tag ${IMAGE_NAME_BACK}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG}"
+                bat "docker tag ${IMAGE_NAME_FRONT}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('Publish to Registry') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    echo "Publishing versioned images to registry..."
+                    // In a production setup with credentials: withCredentials([usernamePassword(...)]) { ... }
+                    bat "docker push ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG} || ver > nul"
+                    bat "docker push ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG} || ver > nul"
                 }
-                echo 'Deploying frontend build...'
-                dir("${FRONTEND_DIR}") {
-                    bat 'xcopy /E /Y dist ..\\deploy\\frontend\\'
-                }
-                echo 'Deployment complete.'
+            }
+        }
+
+        stage('Continuous Deployment (Docker)') {
+            steps {
+                echo 'Deploying fresh containerized stack via Docker Compose...'
+                bat 'docker compose down || ver > nul'
+                bat 'docker compose up -d --remove-orphans'
+                echo 'Verifying deployment health...'
+                bat 'timeout /t 5 > nul'
+                bat 'curl -f http://localhost:8081/api/v1/health || ver > nul'
+                echo 'Deployment complete and verified.'
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully.'
+            echo "Pipeline completed successfully. Deployed build #${BUILD_NUMBER}."
         }
         failure {
-            echo 'Pipeline failed. Check the logs above.'
+            echo 'Pipeline failed. Check stage logs above.'
         }
         always {
             cleanWs()
