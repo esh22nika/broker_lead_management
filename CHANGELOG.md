@@ -5,6 +5,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026-10-07 — Final End-to-End Release & Complete DevOps Toolchain (Week 15)
+
+### Added
+- **Final Release Baseline Tag `v1.5.0`** integrated into `main` branch
+- **Final Technical Documentation & Architecture Report** (`docs/WEEK_15_FINAL_RELEASE_AND_VIVA.md`) covering toolchain architecture, troubleshooting guide, limitations, and future roadmap
+- **Comprehensive Viva Preparation & Examination Guide** (`docs/VIVA_PREPARATION_GUIDE.md`) with 25 model Q&A across Git, Jenkins, Selenium, Docker, Ansible, and system architecture
+- **Export to CSV functionality** enabled for managers and brokers to download offline pipeline reports
+- **Full 15-week DevOps Toolchain sign-off** from plan through code, build, test, release, deploy, operate, and monitor
+
+---
+
 ## [1.4.0] — 2026-10-07 — Automated Provisioning & Reliability (Week 14)
 
 ### Added

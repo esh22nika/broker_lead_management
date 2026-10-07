@@ -333,23 +333,75 @@ TEST SUITE SUMMARY:
 
 
 ====================================================================
-WEEKS 11-15: REMAINING (NOT YET DONE)
+WEEK 11: DOCKER IMAGE & CONTAINER LIFECYCLE
 ====================================================================
 
-Week 11: Docker Image and Container Lifecycle
-  - Write Dockerfile, build/tag image, run container, inspect logs
+WHAT I DID:
+- Created production multi-stage Dockerfiles:
+  * Backend: Maven builder -> minimal Eclipse Temurin JRE 17 with non-root user (blmsuser)
+  * Frontend: Node 20 builder -> lightweight Nginx Alpine reverse proxy for /api/
+- Built docker-compose.yml orchestrating PostgreSQL, Spring Boot, and Nginx
+- Documented full container lifecycle: build, inspect, run, logs, stop, restart, remove
+WHERE TO SHOW IT:
+- Show backend/Dockerfile, frontend/Dockerfile, docker-compose.yml
+- Show docs/WEEK_11_DOCKER.md with full command logs and container evidence
 
-Week 12: Jenkins-Docker Continuous Deployment
-  - Add Docker build stage to Jenkinsfile, push to registry, auto-deploy
+====================================================================
+WEEK 12: JENKINS-DOCKER CONTINUOUS DEPLOYMENT
+====================================================================
 
-Week 13: Configuration Management Script
-  - Ansible playbook or Puppet manifest for server prerequisites
+WHAT I DID:
+- Extended Jenkinsfile with Docker build & tag stage using ${BUILD_NUMBER}
+- Pushed versioned images to Docker Hub (esh22nika/blms-backend:v1.2.0-*)
+- Configured automated continuous deployment via Docker Compose
+- Automated post-deploy health check gate verifying /api/v1/health
+WHERE TO SHOW IT:
+- Jenkinsfile stages 'Docker Build & Tag', 'Publish to Registry', 'Continuous Deployment'
+- Show docs/WEEK_12_JENKINS_DOCKER.md
 
-Week 14: Automated Provisioning and Reliability Validation
-  - Prove idempotency, health checks, rollback
+====================================================================
+WEEK 13: CONFIGURATION MANAGEMENT WITH ANSIBLE
+====================================================================
 
-Week 15: Final End-to-End Release, Documentation, and Viva
-  - Live demo of full toolchain: commit -> build -> test -> deploy
+WHAT I DID:
+- Selected Ansible (agentless, YAML-based, idempotent) over Puppet
+- Created ansible/playbook.yml covering all 6 server prerequisite categories:
+  * Packages (Docker, OpenJDK 17, ufw, curl, jq)
+  * Users/Groups (blmsuser, blmsgroup, docker group)
+  * Folders (/opt/blms, logs, config, postgres data)
+  * Files (environment config, logrotate for 14-day rotation)
+  * Ports/Firewall (UFW rules for 22, 80, 8081)
+  * Services (Docker daemon enabled on boot)
+WHERE TO SHOW IT:
+- Show ansible/playbook.yml and ansible/inventory.ini
+- Show docs/WEEK_13_CONFIGURATION_MANAGEMENT.md
+
+====================================================================
+WEEK 14: AUTOMATED PROVISIONING, IDEMPOTENCY & ROLLBACK
+====================================================================
+
+WHAT I DID:
+- Automated clean host provisioning & container stack rollout (deploy-playbook.yml)
+- Demonstrated idempotency: 1st run updated system, 2nd run produced changed=0
+- Implemented deep health verification for API, DB, and Web server
+- Built automated disaster-recovery rollback (rollback-playbook.yml) reverting to v1.2.0
+WHERE TO SHOW IT:
+- Show ansible/deploy-playbook.yml and ansible/rollback-playbook.yml
+- Show docs/WEEK_14_PROVISIONING_AND_RELIABILITY.md
+
+====================================================================
+WEEK 15: FINAL RELEASE BASELINE, DOCUMENTATION & VIVA
+====================================================================
+
+WHAT I DID:
+- Completed 100% of 15-week DevOps curriculum across Plan, Code, Build, Test, Release, Deploy, Operate, Monitor
+- Tagged release baseline v1.5.0 on main branch
+- Produced comprehensive final technical report (docs/WEEK_15_FINAL_RELEASE_AND_VIVA.md)
+- Prepared 25-question viva examination guide (docs/VIVA_PREPARATION_GUIDE.md)
+- Revamped UI into modern CRM with self-service registration, Indian branding, and CSV export
+WHERE TO SHOW IT:
+- Show main branch tag v1.5.0
+- Show docs/WEEK_15_FINAL_RELEASE_AND_VIVA.md and docs/VIVA_PREPARATION_GUIDE.md
 
 
 ====================================================================

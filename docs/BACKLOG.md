@@ -25,16 +25,16 @@ Updated: 2026-09-02
 | US-15 | As ops, Jenkins-Docker CD pipeline builds, tags, publishes images, and redeploys containers | feature/jenkins-docker-cd | v1.2.0 |
 | US-16 | As ops, Ansible inventory and YAML playbook automate server prerequisite configuration | feature/ansible-config-management | v1.3.0 |
 | US-17 | As ops, automated provisioning, idempotency validation, and rollback mechanism | feature/ansible-reliability | v1.4.0 |
+| US-18 | As a manager, export leads to CSV for offline analysis and reporting | feature/final-release-v1.5.0 | v1.5.0 |
 
 ---
 
-## 🔜 Post-MVP Backlog (Week 15+)
+## 🔜 Post-MVP Future Backlog
 
-| ID | Priority | Story | Target Week |
-|----|----------|-------|-------------|
-| US-18 | Medium | As a manager, export leads to CSV | Week 15 |
-| US-19 | Low | As a broker, receive email notification when a lead is assigned | Post-MVP |
-| US-20 | Low | Multi-branch (office) support | Post-MVP |
+| ID | Priority | Story | Target Release |
+|----|----------|-------|----------------|
+| US-19 | Low | As a broker, receive WhatsApp / SMS alerts when lead is assigned | v2.0.0 |
+| US-20 | Low | Multi-branch office and multi-tenancy support | v2.0.0 |
 
 ---
 
