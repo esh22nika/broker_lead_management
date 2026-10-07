@@ -1,0 +1,72 @@
+---
+# ====================================================================
+# BLMS Application Deployment Playbook (Containerized Stack)
+# Week 14 Deliverable: Automated Provisioning & Reliability
+# ====================================================================
+
+- name: Deploy BLMS Application Stack and Verify Service Health
+  hosts: blms_servers, local
+  become: true
+  gather_facts: false
+
+  vars:
+    app_root_dir: /opt/blms
+    app_user: blmsuser
+    app_group: blmsgroup
+    image_tag: "v1.3.0"
+    registry_user: "esh22nika"
+    backend_port: 8081
+    frontend_port: 80
+
+  tasks:
+
+    # ------------------------------------------------------------------
+    # 1. DEPLOY DOCKER COMPOSE DEFINITION
+    # ------------------------------------------------------------------
+    - name: Copy docker-compose deployment specification
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ app_root_dir }}/deploy/docker-compose.yml"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0644'
+
+    # ------------------------------------------------------------------
+    # 2. CONTAINER ORCHESTRATION & DEPLOYMENT
+    # ------------------------------------------------------------------
+    - name: Pull and start BLMS container stack
+      command: docker compose -f {{ app_root_dir }}/deploy/docker-compose.yml up -d --remove-orphans
+      register: compose_up_result
+      changed_when: "'Started' in compose_up_result.stdout or 'Created' in compose_up_result.stdout or 'Recreated' in compose_up_result.stdout"
+
+    # ------------------------------------------------------------------
+    # 3. AUTOMATED HEALTH CHECK & RELIABILITY GATE
+    # ------------------------------------------------------------------
+    - name: Wait for Spring Boot backend health endpoint to respond
+      uri:
+        url: "http://localhost:{{ backend_port }}/api/v1/health"
+        method: GET
+        status_code: 200
+        return_content: yes
+      register: backend_health
+      until: backend_health.status == 200 and ('UP' in backend_health.content or 'healthy' in backend_health.content)
+      retries: 15
+      delay: 3
+
+    - name: Verify Nginx Web Frontend liveness
+      uri:
+        url: "http://localhost:{{ frontend_port }}/nginx-health"
+        method: GET
+        status_code: 200
+      register: frontend_health
+
+    # ------------------------------------------------------------------
+    # 4. DEPLOYMENT VERIFICATION SUMMARY
+    # ------------------------------------------------------------------
+    - name: Output deployment health report
+      debug:
+        msg:
+          - "Deployment Status: SUCCESS"
+          - "Backend Health: HTTP 200 OK (Spring Boot active on port {{ backend_port }})"
+          - "Frontend Health: HTTP 200 OK (Nginx serving on port {{ frontend_port }})"
+          - "Active Release: {{ image_tag }}"
