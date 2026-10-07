@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
@@ -25,7 +23,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: blms-backend:v1.0.0
+    image: blms-backend:latest
     container_name: blms-backend-container
     restart: unless-stopped
     depends_on:
@@ -52,7 +50,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: blms-frontend:v1.0.0
+    image: blms-frontend:latest
     container_name: blms-frontend-container
     restart: unless-stopped
     depends_on:
