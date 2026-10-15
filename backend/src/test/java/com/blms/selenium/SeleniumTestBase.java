@@ -27,12 +27,29 @@ public abstract class SeleniumTestBase {
         }
     }
 
+    protected static boolean isServerRunning() {
+        try (var socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress("localhost", 3000), 400);
+            return true;
+        } catch (Exception e) {
+            try (var s2 = new java.net.Socket()) {
+                s2.connect(new java.net.InetSocketAddress("localhost", 5173), 400);
+                return true;
+            } catch (Exception e2) {
+                return false;
+            }
+        }
+    }
+
     protected static final String BASE_URL = getBaseUrl();
     protected static final String DEMO_EMAIL = "admin@blms.com";
     protected static final String DEMO_PASSWORD = "admin123";
 
     @BeforeEach
     void setUp() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(isServerRunning(),
+                "Live application server is not currently reachable on port 3000 or 5173; skipping browser tests.");
+
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");
         options.addArguments("--no-sandbox");
