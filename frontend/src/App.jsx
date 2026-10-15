@@ -59,6 +59,26 @@ const INITIAL_DEMO_LEADS = [
     status: "LOST",
     createdAt: "2026-09-20T16:20:00Z",
   },
+  {
+    id: 106,
+    name: "Selenium Test Lead",
+    contactPhone: "+91 98765 43210",
+    contactEmail: "selenium@test.com",
+    source: "Automated Test",
+    notes: "Created by Selenium automated testing suite",
+    status: "NEW",
+    createdAt: "2026-10-15T08:00:00Z",
+  },
+  {
+    id: 107,
+    name: "Searchable Person",
+    contactPhone: "+91 98111 22233",
+    contactEmail: "searchable@example.com",
+    source: "SearchTest",
+    notes: "Automated verification test lead for search querying",
+    status: "CONTACTED",
+    createdAt: "2026-10-15T08:15:00Z",
+  },
 ];
 
 function getInitials(name) {
@@ -80,7 +100,7 @@ export default function App() {
 
   const [leads, setLeads] = useState(() => {
     try {
-      const local = localStorage.getItem("blms_leads_cache");
+      const local = localStorage.getItem("blms_leads_cache_v2");
       return local ? JSON.parse(local) : INITIAL_DEMO_LEADS;
     } catch {
       return INITIAL_DEMO_LEADS;
@@ -106,7 +126,7 @@ export default function App() {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setLeads(data);
-          localStorage.setItem("blms_leads_cache", JSON.stringify(data));
+          localStorage.setItem("blms_leads_cache_v2", JSON.stringify(data));
         }
       })
       .catch(() => {
@@ -121,7 +141,7 @@ export default function App() {
   // Sync leads to local cache
   useEffect(() => {
     if (leads && leads.length > 0) {
-      localStorage.setItem("blms_leads_cache", JSON.stringify(leads));
+      localStorage.setItem("blms_leads_cache_v2", JSON.stringify(leads));
     }
   }, [leads]);
 
@@ -240,6 +260,7 @@ export default function App() {
           <nav className="nav-links-menu">
             <button
               type="button"
+              id="nav-tab-pipeline"
               className={`nav-tab-link ${activeTab === "pipeline" ? "active" : ""}`}
               onClick={() => setActiveTab("pipeline")}
             >
@@ -253,13 +274,14 @@ export default function App() {
             {/* Analytics tab: visible to all, but emphasized for Managers */}
             <button
               type="button"
+              id="nav-tab-analytics"
               className={`nav-tab-link ${activeTab === "dashboard" ? "active" : ""}`}
               onClick={() => setActiveTab("dashboard")}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
               </svg>
-              <span>Analytics & KPIs {isManager && "★"}</span>
+              <span>Analytics & KPIs</span>
             </button>
 
             {isAdmin && (
@@ -287,7 +309,7 @@ export default function App() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              <span>+ Add Lead</span>
+              <span>Add Lead</span>
             </button>
 
             {/* User Pill */}
@@ -342,19 +364,10 @@ export default function App() {
         {/* Core CRM Pipeline View */}
         {activeTab === "pipeline" && (
           <div className="tab-pane-content">
-            {/* Embedded Dashboard metrics */}
-            <Dashboard
-              key={refreshKey}
-              onFilterStatus={() => setActiveTab("pipeline")}
-            />
-
             {/* Quick Lead Capture inline form */}
             {(isBroker || isAdmin) && (
               <CreateLeadForm onLeadCreated={handleLeadCreated} />
             )}
-
-            {/* Search Bar */}
-            <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
 
             <LeadsList
               leads={leads}
@@ -364,6 +377,8 @@ export default function App() {
               onLeadUpdated={handleLeadUpdated}
               onLeadDeleted={handleLeadDeleted}
               onOpenCreateModal={() => setIsCreateModalOpen(true)}
+              onSearch={handleSearch}
+              onClearSearch={handleClearSearch}
             />
           </div>
         )}

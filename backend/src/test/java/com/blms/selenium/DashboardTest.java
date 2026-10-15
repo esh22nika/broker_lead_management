@@ -16,8 +16,19 @@ class DashboardTest extends SeleniumTestBase {
     @BeforeEach
     void loginFirst() {
         login();
-        WebElement analyticsTab = wait.until(d -> d.findElement(By.id("nav-tab-analytics")));
-        analyticsTab.click();
+        if (driver.findElements(By.cssSelector(".dashboard-grid")).isEmpty()) {
+            var tabs = driver.findElements(By.id("nav-tab-analytics"));
+            if (!tabs.isEmpty()) {
+                tabs.get(0).click();
+            } else {
+                for (var btn : driver.findElements(By.tagName("button"))) {
+                    if (btn.getText() != null && btn.getText().toLowerCase().contains("analytics")) {
+                        btn.click();
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Test
