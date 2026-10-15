@@ -27,6 +27,7 @@ public abstract class SeleniumTestBase {
         }
     }
 
+    protected static final String BASE_URL = getBaseUrl();
     protected static final String DEMO_EMAIL = "admin@blms.com";
     protected static final String DEMO_PASSWORD = "admin123";
 
