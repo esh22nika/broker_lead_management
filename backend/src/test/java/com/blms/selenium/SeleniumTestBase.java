@@ -14,7 +14,19 @@ public abstract class SeleniumTestBase {
     protected WebDriver driver;
     protected WebDriverWait wait;
 
-    protected static final String BASE_URL = "http://localhost:5173";
+    protected static String getBaseUrl() {
+        String prop = System.getProperty("baseUrl");
+        if (prop != null && !prop.isBlank()) return prop;
+        String env = System.getenv("BASE_URL");
+        if (env != null && !env.isBlank()) return env;
+        try (var socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress("localhost", 3000), 400);
+            return "http://localhost:3000";
+        } catch (Exception e) {
+            return "http://localhost:5173";
+        }
+    }
+
     protected static final String DEMO_EMAIL = "admin@blms.com";
     protected static final String DEMO_PASSWORD = "admin123";
 
@@ -37,7 +49,7 @@ public abstract class SeleniumTestBase {
     }
 
     protected void login() {
-        driver.get(BASE_URL);
+        driver.get(getBaseUrl());
         wait.until(d -> d.findElement(org.openqa.selenium.By.id("login-email")));
 
         driver.findElement(org.openqa.selenium.By.id("login-email")).sendKeys(DEMO_EMAIL);

@@ -16,6 +16,8 @@ class DashboardTest extends SeleniumTestBase {
     @BeforeEach
     void loginFirst() {
         login();
+        WebElement analyticsTab = wait.until(d -> d.findElement(By.id("nav-tab-analytics")));
+        analyticsTab.click();
     }
 
     @Test
