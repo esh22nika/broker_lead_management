@@ -49,12 +49,15 @@ try {
         -RedirectStandardError (Join-Path $backendDir 'target/browser-ui-error.log')
 
     $ready = $false
-    for ($attempt = 0; $attempt -lt 60; $attempt++) {
+    for ($attempt = 0; $attempt -lt 240; $attempt++) {
         if ($apiProcess.HasExited -or $uiProcess.HasExited) { throw 'Browser-test service exited; inspect target/browser-*.log.' }
         try {
             $health = Invoke-RestMethod "$env:BASE_URL/api/v1/health" -TimeoutSec 2
             if ($health.status -eq 'UP') { $ready = $true; break }
         } catch {}
+        if ($attempt -gt 0 -and $attempt % 15 -eq 0) {
+            Write-Host "Waiting for browser-test services to become ready ($attempt s)..."
+        }
         Start-Sleep -Seconds 1
     }
     if (-not $ready) { throw 'Browser-test services did not become healthy; inspect target/browser-*.log.' }
