@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "../api";
 import { useState, useEffect } from "react";
 
 const LEAD_SOURCES = [
@@ -50,39 +51,20 @@ export default function CreateLeadModal({ isOpen, onClose, onLeadCreated }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/v1/leads", {
+      const res = await apiFetch("/api/v1/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) {
-        // Fallback if backend is offline:
-        const fallback = {
-          id: Date.now(),
-          ...form,
-          status: "NEW",
-          createdAt: new Date().toISOString(),
-        };
-        onLeadCreated(fallback);
-        onClose();
-        return;
-      }
+      if (!res.ok) throw await responseError(res, "Unable to save lead");
 
       const created = await res.json();
       setForm({ name: "", contactPhone: "", contactEmail: "", source: "MagicBricks", notes: "" });
       onLeadCreated(created);
       onClose();
     } catch (err) {
-      // Fallback
-      const fallback = {
-        id: Date.now(),
-        ...form,
-        status: "NEW",
-        createdAt: new Date().toISOString(),
-      };
-      onLeadCreated(fallback);
-      onClose();
+      setError(err.message || "Unable to save lead. Please try again.");
     } finally {
       setLoading(false);
     }

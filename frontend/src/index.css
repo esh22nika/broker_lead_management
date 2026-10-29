@@ -578,10 +578,11 @@ button, input, select, textarea {
 
 .filter-search-wrap {
   flex: 1;
-  min-width: 240px;
+  min-width: 280px;
   position: relative;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .filter-search-icon {
@@ -591,38 +592,52 @@ button, input, select, textarea {
   height: 16px;
   color: #94a3b8;
   pointer-events: none;
+  z-index: 2;
 }
 
 .filter-search-input {
-  width: 100%;
-  padding: 0.5rem 2rem 0.5rem 2.3rem;
+  flex: 1;
+  padding: 0.52rem 0.85rem 0.52rem 2.3rem;
   border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  font-size: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
   background: #ffffff;
   color: #0f172a;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .filter-search-input:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.filter-clear-btn {
-  position: absolute;
-  right: 0.6rem;
-  background: transparent;
-  border: none;
-  color: #94a3b8;
+.search-action-btn {
+  padding: 0.52rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.search-clear-btn {
+  padding: 0.52rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  white-space: nowrap;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
 }
 
-.filter-clear-btn svg {
-  width: 14px;
-  height: 14px;
+.search-clear-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .filter-select-wrap select {

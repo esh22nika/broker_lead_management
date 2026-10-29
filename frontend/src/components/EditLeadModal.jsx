@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "../api";
 import { useState, useEffect } from "react";
 
 const LEAD_SOURCES = [
@@ -43,26 +44,17 @@ export default function EditLeadModal({ lead, onClose, onSaved }) {
     }
     setSaving(true);
     try {
-      const res = await fetch(`/api/v1/leads/${lead.id}`, {
+      const res = await apiFetch(`/api/v1/leads/${lead.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) {
-        // Fallback for offline mode
-        const updated = { ...lead, ...form };
-        onSaved(updated);
-        onClose();
-        return;
-      }
+      if (!res.ok) throw await responseError(res, "Unable to save lead");
       const updated = await res.json();
       onSaved(updated);
       onClose();
     } catch (err) {
-      // Fallback
-      const updated = { ...lead, ...form };
-      onSaved(updated);
-      onClose();
+      setError(err.message || "Unable to save lead. Please try again.");
     } finally {
       setSaving(false);
     }

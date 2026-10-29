@@ -1,5 +1,13 @@
 package com.blms.controller;
 
+import com.blms.model.User;
+import com.blms.model.UserRole;
+import com.blms.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.web.MockHttpSession;
+import jakarta.servlet.http.Cookie;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import com.blms.model.Lead;
 import com.blms.model.LeadStatus;
 import com.blms.repository.LeadRepository;
@@ -35,9 +43,38 @@ class LeadControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired private UserRepository users;
+    @Autowired private PasswordEncoder encoder;
+    private MockHttpSession session;
+    private Cookie csrfCookie;
+    private String csrfToken;
+
     @BeforeEach
-    void cleanUp() {
+    void cleanUp() throws Exception {
         leadRepository.deleteAll();
+        if (users.findByEmail("test-admin@blms.com").isEmpty()) {
+            User admin = new User();
+            admin.setName("Test Admin");
+            admin.setEmail("test-admin@blms.com");
+            admin.setPassword(encoder.encode("test-password"));
+            admin.setRole(UserRole.ADMIN);
+            users.save(admin);
+        }
+        var csrf = mockMvc.perform(get("/api/v1/auth/csrf")).andReturn().getResponse();
+        csrfCookie = csrf.getCookie("XSRF-TOKEN");
+        csrfToken = objectMapper.readTree(csrf.getContentAsString()).get("token").asText();
+        var login = mockMvc.perform(post("/api/v1/auth/login").cookie(csrfCookie)
+            .header("X-XSRF-TOKEN", csrfToken).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"test-admin@blms.com\",\"password\":\"test-password\"}"))
+            .andExpect(status().isOk()).andReturn();
+        session = (MockHttpSession) login.getRequest().getSession(false);
+        csrf = mockMvc.perform(get("/api/v1/auth/csrf").session(session)).andReturn().getResponse();
+        csrfCookie = csrf.getCookie("XSRF-TOKEN");
+        csrfToken = objectMapper.readTree(csrf.getContentAsString()).get("token").asText();
+    }
+
+    private ResultActions perform(MockHttpServletRequestBuilder request) throws Exception {
+        return mockMvc.perform(request.session(session).cookie(csrfCookie).header("X-XSRF-TOKEN", csrfToken));
     }
 
     private Lead createTestLead(String name, LeadStatus status) {
@@ -55,7 +92,7 @@ class LeadControllerIntegrationTest {
     void createLead() throws Exception {
         String json = "{\"name\":\"Test Lead\",\"contactEmail\":\"test@test.com\",\"source\":\"Web\"}";
 
-        mockMvc.perform(post("/api/v1/leads")
+        perform(post("/api/v1/leads")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
@@ -69,7 +106,7 @@ class LeadControllerIntegrationTest {
     void createLeadEmptyName() throws Exception {
         String json = "{\"name\":\"\",\"contactEmail\":\"test@test.com\"}";
 
-        mockMvc.perform(post("/api/v1/leads")
+        perform(post("/api/v1/leads")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest());
@@ -81,7 +118,7 @@ class LeadControllerIntegrationTest {
         createTestLead("Lead One", LeadStatus.NEW);
         createTestLead("Lead Two", LeadStatus.CONTACTED);
 
-        mockMvc.perform(get("/api/v1/leads"))
+        perform(get("/api/v1/leads"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
     }
@@ -91,7 +128,7 @@ class LeadControllerIntegrationTest {
     void getLeadById() throws Exception {
         Lead lead = createTestLead("Specific Lead", LeadStatus.QUALIFIED);
 
-        mockMvc.perform(get("/api/v1/leads/" + lead.getId()))
+        perform(get("/api/v1/leads/" + lead.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Specific Lead"))
                 .andExpect(jsonPath("$.status").value("QUALIFIED"));
@@ -100,7 +137,7 @@ class LeadControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/leads/{id} returns 404 for non-existent lead")
     void getLeadByIdNotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/leads/9999"))
+        perform(get("/api/v1/leads/9999"))
                 .andExpect(status().isNotFound());
     }
 
@@ -110,7 +147,7 @@ class LeadControllerIntegrationTest {
         Lead lead = createTestLead("Update Me", LeadStatus.NEW);
         String json = "{\"status\":\"CONTACTED\"}";
 
-        mockMvc.perform(put("/api/v1/leads/" + lead.getId())
+        perform(put("/api/v1/leads/" + lead.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
@@ -123,7 +160,7 @@ class LeadControllerIntegrationTest {
         Lead lead = createTestLead("Old Name", LeadStatus.NEW);
         String json = "{\"name\":\"New Name\"}";
 
-        mockMvc.perform(put("/api/v1/leads/" + lead.getId())
+        perform(put("/api/v1/leads/" + lead.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
@@ -135,10 +172,10 @@ class LeadControllerIntegrationTest {
     void deleteLead() throws Exception {
         Lead lead = createTestLead("Delete Me", LeadStatus.LOST);
 
-        mockMvc.perform(delete("/api/v1/leads/" + lead.getId()))
+        perform(delete("/api/v1/leads/" + lead.getId()))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/v1/leads/" + lead.getId()))
+        perform(get("/api/v1/leads/" + lead.getId()))
                 .andExpect(status().isNotFound());
     }
 
@@ -148,7 +185,7 @@ class LeadControllerIntegrationTest {
         createTestLead("Alice Johnson", LeadStatus.NEW);
         createTestLead("Bob Williams", LeadStatus.CONTACTED);
 
-        mockMvc.perform(get("/api/v1/leads/search").param("q", "Alice"))
+        perform(get("/api/v1/leads/search").param("q", "Alice"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].name").value("Alice Johnson"));
@@ -161,7 +198,7 @@ class LeadControllerIntegrationTest {
         createTestLead("Lead B", LeadStatus.NEW);
         createTestLead("Lead C", LeadStatus.CONTACTED);
 
-        mockMvc.perform(get("/api/v1/dashboard/summary"))
+        perform(get("/api/v1/dashboard/summary"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalLeads").value(3))
                 .andExpect(jsonPath("$.countsByStatus.NEW").value(2))

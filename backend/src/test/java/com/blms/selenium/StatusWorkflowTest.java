@@ -11,25 +11,31 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Status Workflow - Selenium Tests")
 class StatusWorkflowTest extends SeleniumTestBase {
+    private String leadName;
+
+    private WebElement statusSelect() {
+        return driver.findElement(By.xpath("//tr[td[contains(., '" + leadName + "')]]//select[contains(@class, 'status-select')]"));
+    }
 
     @BeforeEach
     void loginAndCreateLead() {
         login();
+        leadName = "Status Test Lead " + java.util.UUID.randomUUID();
 
-        driver.findElement(By.cssSelector("input[name='name']")).sendKeys("Status Test Lead");
+        driver.findElement(By.cssSelector("input[name='name']")).sendKeys(leadName);
         driver.findElement(By.cssSelector("input[name='contactEmail']")).sendKeys("status@test.com");
         driver.findElement(By.cssSelector("button.btn-primary")).click();
 
         wait.until(d -> {
             var cells = d.findElements(By.tagName("td"));
-            return cells.stream().anyMatch(c -> c.getText().contains("Status Test Lead"));
+            return cells.stream().anyMatch(c -> c.getText().contains(leadName));
         });
     }
 
     @Test
     @DisplayName("New lead starts with NEW status")
     void newLeadHasNewStatus() {
-        WebElement statusSelect = driver.findElement(By.cssSelector(".status-select"));
+        WebElement statusSelect = statusSelect();
         Select select = new Select(statusSelect);
 
         assertEquals("NEW", select.getFirstSelectedOption().getAttribute("value"));
@@ -38,35 +44,35 @@ class StatusWorkflowTest extends SeleniumTestBase {
     @Test
     @DisplayName("Change lead status from NEW to CONTACTED")
     void changeStatusToContacted() {
-        WebElement statusSelect = driver.findElement(By.cssSelector(".status-select"));
+        WebElement statusSelect = statusSelect();
         Select select = new Select(statusSelect);
 
         select.selectByValue("CONTACTED");
 
         wait.until(d -> {
-            WebElement sel = d.findElement(By.cssSelector(".status-select"));
+            WebElement sel = statusSelect();
             return sel.getAttribute("class").contains("status-CONTACTED");
         });
 
-        Select updated = new Select(driver.findElement(By.cssSelector(".status-select")));
+        Select updated = new Select(statusSelect());
         assertEquals("CONTACTED", updated.getFirstSelectedOption().getAttribute("value"));
     }
 
     @Test
     @DisplayName("Change lead status through full workflow to CONVERTED")
     void fullWorkflowToConverted() {
-        WebElement statusSelect = driver.findElement(By.cssSelector(".status-select"));
+        WebElement statusSelect = statusSelect();
 
         new Select(statusSelect).selectByValue("CONTACTED");
-        wait.until(d -> d.findElement(By.cssSelector(".status-CONTACTED")));
+        wait.until(d -> statusSelect().getAttribute("class").contains("status-CONTACTED"));
 
-        new Select(driver.findElement(By.cssSelector(".status-select"))).selectByValue("QUALIFIED");
-        wait.until(d -> d.findElement(By.cssSelector(".status-QUALIFIED")));
+        new Select(statusSelect()).selectByValue("QUALIFIED");
+        wait.until(d -> statusSelect().getAttribute("class").contains("status-QUALIFIED"));
 
-        new Select(driver.findElement(By.cssSelector(".status-select"))).selectByValue("CONVERTED");
-        wait.until(d -> d.findElement(By.cssSelector(".status-CONVERTED")));
+        new Select(statusSelect()).selectByValue("CONVERTED");
+        wait.until(d -> statusSelect().getAttribute("class").contains("status-CONVERTED"));
 
-        Select finalSelect = new Select(driver.findElement(By.cssSelector(".status-select")));
+        Select finalSelect = new Select(statusSelect());
         assertEquals("CONVERTED", finalSelect.getFirstSelectedOption().getAttribute("value"));
     }
 }

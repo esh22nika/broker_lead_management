@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "../api";
 import { useState } from "react";
 import EditLeadModal from "./EditLeadModal";
 
@@ -30,13 +31,16 @@ export default function LeadsList({
   onLeadUpdated,
   onLeadDeleted,
   onOpenCreateModal,
+  onSearch,
+  onClearSearch,
+  initialStatus = "ALL",
 }) {
   const [viewMode, setViewMode] = useState("table"); // "table" | "kanban"
   const [editingLead, setEditingLead] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   
   // Filtering & Sorting
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [sourceFilter, setSourceFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest"); // "newest" | "oldest" | "name"
@@ -80,7 +84,7 @@ export default function LeadsList({
       return;
     }
 
-    fetch(`/api/v1/leads/${id}`, {
+    apiFetch(`/api/v1/leads/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
@@ -90,11 +94,7 @@ export default function LeadsList({
         return res.json();
       })
       .then((updated) => onStatusChange(updated))
-      .catch(() => {
-        // Fallback for offline mode:
-        const target = leads.find((l) => l.id === id);
-        if (target) onStatusChange({ ...target, status: newStatus });
-      });
+      .catch(() => alert("Unable to save status. Please try again."));
   }
 
   function handleDelete(id, name) {
@@ -104,13 +104,13 @@ export default function LeadsList({
     }
     if (!window.confirm(`Delete lead "${name}"? This action cannot be undone.`)) return;
     setDeletingId(id);
-    fetch(`/api/v1/leads/${id}`, { method: "DELETE" })
+    apiFetch(`/api/v1/leads/${id}`, { method: "DELETE" })
       .then((res) => {
-        if (res.ok) onLeadDeleted(id);
-        else onLeadDeleted(id); // offline fallback
+        if (!res.ok) throw new Error();
+        onLeadDeleted(id);
       })
       .catch(() => {
-        onLeadDeleted(id); // offline fallback
+        alert("Unable to delete lead. Please try again.");
       })
       .finally(() => setDeletingId(null));
   }
@@ -121,26 +121,28 @@ export default function LeadsList({
       alert("No leads available to export.");
       return;
     }
+    const safeCell = (value) => /^[=+@\-\t\r]/.test(value || "") ? "\'" + value : (value || "");
     const headers = ["ID", "Name", "Phone", "Email", "Source", "Status", "Created At", "Notes"];
     const rows = filteredLeads.map((l) => [
       l.id,
-      `"${(l.name || "").replace(/"/g, '""')}"`,
-      `"${(l.contactPhone || "").replace(/"/g, '""')}"`,
-      `"${(l.contactEmail || "").replace(/"/g, '""')}"`,
-      `"${(l.source || "").replace(/"/g, '""')}"`,
+      `"${safeCell(l.name).replace(/"/g, '""')}"`,
+      `"${safeCell(l.contactPhone).replace(/"/g, '""')}"`,
+      `"${safeCell(l.contactEmail).replace(/"/g, '""')}"`,
+      `"${safeCell(l.source).replace(/"/g, '""')}"`,
       l.status,
       l.createdAt || "",
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
+      `"${safeCell(l.notes).replace(/"/g, '""')}"`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = URL.createObjectURL(new Blob([csvContent], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `blms_leads_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(encodedUri), 0);
   }
 
   // Counts by status
@@ -233,7 +235,7 @@ export default function LeadsList({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              <span>+ Capture Lead</span>
+              <span>Capture Lead</span>
             </button>
           )}
         </div>
@@ -241,8 +243,16 @@ export default function LeadsList({
 
       {/* Filter and Search Bar */}
       <div className="filter-toolbar">
-        {/* Search Input */}
-        <div className="filter-search-wrap">
+        {/* Search Input Bar */}
+        <form
+          className="search-bar filter-search-wrap"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (onSearch && searchQuery.trim()) {
+              onSearch(searchQuery.trim());
+            }
+          }}
+        >
           <svg className="filter-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -253,14 +263,23 @@ export default function LeadsList({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search leads by client name, email, phone, or requirements..."
           />
+          <button type="submit" className="btn-primary search-action-btn">
+            Search
+          </button>
           {searchQuery && (
-            <button type="button" className="filter-clear-btn" onClick={() => setSearchQuery("")}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+            <button
+              type="button"
+              className="btn-secondary search-clear-btn"
+              onClick={() => {
+                setSearchQuery("");
+                if (onClearSearch) onClearSearch();
+              }}
+              title="Clear search filter"
+            >
+              Clear
             </button>
           )}
-        </div>
+        </form>
 
         {/* Source Filter */}
         <div className="filter-select-wrap">
@@ -313,7 +332,7 @@ export default function LeadsList({
           </p>
           {onOpenCreateModal && (
             <button type="button" className="btn-accent" onClick={onOpenCreateModal}>
-              + Capture First Lead
+              Capture First Lead
             </button>
           )}
         </div>

@@ -1,147 +1,110 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(name: 'PUBLISH_IMAGES', defaultValue: false, description: 'Build and publish Docker images after all tests pass (requires docker-hub credentials).')
+        booleanParam(name: 'DEPLOY_DOCKER', defaultValue: false, description: 'Deploy to this Windows agent after all tests pass (requires Docker and BLMS secrets).')
+    }
+
     tools {
         maven 'Maven-3.9.16'
         jdk 'JDK-21'
     }
 
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
     environment {
-        BACKEND_DIR     = 'backend'
-        FRONTEND_DIR    = 'frontend'
-        IMAGE_NAME_BACK = 'blms-backend'
-        IMAGE_NAME_FRONT= 'blms-frontend'
-        IMAGE_TAG       = "v1.2.0-${BUILD_NUMBER}"
-        REGISTRY_USER   = 'esh22nika'
+        REGISTRY_USER = 'esh22nika'
+        IMAGE_TAG = "build-${BUILD_NUMBER}"
+        BLMS_ADMIN_EMAIL = 'admin@blms.com'
     }
 
     stages {
-
         stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Check Build Tools') {
             steps {
-                checkout scm
+                script {
+                    if (isUnix()) { error('This pipeline requires a Windows agent with Node.js and Chrome installed.') }
+                }
+                bat 'java -version'
+                bat 'mvn -version'
+                bat 'node --version'
+                bat 'npm --version'
             }
         }
-
-        stage('Build Backend') {
+        stage('Backend Tests and Package') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    bat 'mvn clean compile -DskipTests'
-                }
-            }
-        }
-
-        stage('Unit Tests') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    bat 'mvn test'
-                }
+                dir('backend') { bat 'mvn clean verify -B' }
             }
             post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
-                    }
-                }
+                always { junit testResults: 'backend/target/surefire-reports/TEST-com.blms.controller.*.xml,backend/target/surefire-reports/TEST-com.blms.service.*.xml', allowEmptyResults: true }
+                success { archiveArtifacts artifacts: 'backend/target/blms-backend.jar', fingerprint: true }
             }
         }
-
-        stage('Package') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    bat 'mvn package -DskipTests'
-                }
-            }
-            post {
-                success {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'target/blms-backend.jar', fingerprint: true
-                    }
-                }
-            }
-        }
-
         stage('Build Frontend') {
             steps {
-                dir("${FRONTEND_DIR}") {
-                    bat 'npm install'
+                dir('frontend') {
+                    bat 'npm ci'
+                    bat 'npm test'
                     bat 'npm run build'
                 }
             }
-            post {
-                success {
-                    dir("${FRONTEND_DIR}") {
-                        archiveArtifacts artifacts: 'dist/**', fingerprint: true
-                    }
-                }
-            }
+            post { success { archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true } }
         }
-
-        stage('Selenium Tests') {
+        stage('Browser Tests') {
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    dir("${BACKEND_DIR}") {
-                        bat 'mvn test -Pselenium'
-                    }
-                }
+                powershell '& .\\ci\\Test-Browser.ps1'
             }
             post {
                 always {
-                    dir("${BACKEND_DIR}") {
-                        junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
-                    }
+                    junit testResults: 'backend/target/surefire-reports/TEST-com.blms.selenium.*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'backend/target/browser-*.log,backend/target/failure-screenshots/**', allowEmptyArchive: true
                 }
             }
         }
-
-        stage('Docker Build & Tag') {
+        stage('Build Docker Images') {
+            when { expression { params.PUBLISH_IMAGES || params.DEPLOY_DOCKER } }
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    echo "Building versioned Docker images for build #${BUILD_NUMBER}..."
-                    bat "docker build -t ${IMAGE_NAME_BACK}:${IMAGE_TAG} -t ${IMAGE_NAME_BACK}:latest ./${BACKEND_DIR}"
-                    bat "docker build -t ${IMAGE_NAME_FRONT}:${IMAGE_TAG} -t ${IMAGE_NAME_FRONT}:latest ./${FRONTEND_DIR}"
-                    bat "docker tag ${IMAGE_NAME_BACK}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG}"
-                    bat "docker tag ${IMAGE_NAME_FRONT}:${IMAGE_TAG} ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG}"
+                bat 'docker build -t %REGISTRY_USER%/blms-backend:%IMAGE_TAG% ./backend'
+                bat 'docker build -t %REGISTRY_USER%/blms-frontend:%IMAGE_TAG% ./frontend'
+            }
+        }
+        stage('Publish Images') {
+            when { expression { params.PUBLISH_IMAGES } }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    bat '''@echo off
+powershell -NoProfile -Command "$env:DOCKER_PASSWORD | docker login --username $env:DOCKER_USER --password-stdin; exit $LASTEXITCODE"
+if errorlevel 1 exit /b 1
+docker push %REGISTRY_USER%/blms-backend:%IMAGE_TAG%
+if errorlevel 1 exit /b 1
+docker push %REGISTRY_USER%/blms-frontend:%IMAGE_TAG%
+exit /b %ERRORLEVEL%
+'''
                 }
             }
         }
-
-        stage('Publish to Registry') {
+        stage('Deploy and Verify') {
+            when { expression { params.DEPLOY_DOCKER } }
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    echo "Publishing versioned images to registry..."
-                    // In a production setup with credentials: withCredentials([usernamePassword(...)]) { ... }
-                    bat "docker push ${REGISTRY_USER}/${IMAGE_NAME_BACK}:${IMAGE_TAG} || ver > nul"
-                    bat "docker push ${REGISTRY_USER}/${IMAGE_NAME_FRONT}:${IMAGE_TAG} || ver > nul"
-                }
-            }
-        }
-
-        stage('Continuous Deployment (Docker)') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    echo 'Deploying fresh containerized stack via Docker Compose...'
-                    bat 'powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; exit 0"'
-                    bat 'docker compose down || ver > nul'
-                    bat 'docker compose up -d --remove-orphans'
-                    echo 'Verifying deployment health...'
-                    bat 'powershell -NoProfile -Command "Start-Sleep -Seconds 5"'
-                    bat 'curl -f http://localhost:8081/api/v1/health || ver > nul'
-                    echo 'Deployment complete and verified.'
+                withCredentials([string(credentialsId: 'blms-db-password', variable: 'DB_PASSWORD'),
+                                 string(credentialsId: 'blms-admin-password', variable: 'BLMS_ADMIN_PASSWORD')]) {
+                    bat 'docker compose config --quiet'
+                    bat 'docker compose up -d --no-build --remove-orphans --wait --wait-timeout 180'
+                    bat 'curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000/api/v1/health'
+                    bat 'curl --fail http://localhost:3000/nginx-health'
                 }
             }
         }
     }
-
     post {
-        success {
-            echo "Pipeline completed successfully. Deployed build #${BUILD_NUMBER}."
-        }
-        failure {
-            echo 'Pipeline failed. Check stage logs above.'
-        }
-        always {
-            cleanWs()
-        }
+        success { echo "Build ${IMAGE_TAG} passed backend, frontend and browser tests. Docker actions ran only if selected." }
+        failure { echo 'Build or deployment verification failed. Check the failed stage.' }
+        always { cleanWs() }
     }
 }

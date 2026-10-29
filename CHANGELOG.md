@@ -5,6 +5,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- Jenkins runs Selenium against an isolated H2 backend and built frontend before optional
+  Docker publishing or deployment; default builds need no deployment secrets or agent label.
+- Browser test failures save screenshots and service logs as Jenkins artifacts.
+- Server-side session authentication, CSRF protection, and enforced role permissions.
+- Broker-only public signup; deactivated accounts and changed roles apply to active sessions.
+- Removed fabricated login, lead, user, and dashboard success fallbacks and shared demo caches.
+- Empty lead results, dashboard status filtering, input validation, and CSV escaping.
+- Versioned deployment and rollback images, required database secrets, database-aware health checks,
+  and Jenkins failure gates for publishing, deployment, and browser tests.
+- Added authentication regression tests and frontend API tests. Browser tests fail when the app
+  is unavailable and use unique lead names rather than prepopulated fixtures.
+- Corrected setup documentation and made demo account creation opt-in.
+
 ## [1.5.0] — 2026-10-07 — Final End-to-End Release & Complete DevOps Toolchain (Week 15)
 
 ### Added

@@ -29,7 +29,8 @@ class CreateLeadTest extends SeleniumTestBase {
     @Test
     @DisplayName("Create a lead and verify it appears in the list")
     void createLeadAndVerifyInList() {
-        driver.findElement(By.cssSelector("input[name='name']")).sendKeys("Selenium Test Lead");
+        String leadName = "Selenium Test Lead " + java.util.UUID.randomUUID();
+        driver.findElement(By.cssSelector("input[name='name']")).sendKeys(leadName);
         driver.findElement(By.cssSelector("input[name='contactPhone']")).sendKeys("9876543210");
         driver.findElement(By.cssSelector("input[name='contactEmail']")).sendKeys("selenium@test.com");
         driver.findElement(By.cssSelector("input[name='source']")).sendKeys("Automated Test");
@@ -38,12 +39,17 @@ class CreateLeadTest extends SeleniumTestBase {
 
         wait.until(d -> {
             var cells = d.findElements(By.tagName("td"));
-            return cells.stream().anyMatch(c -> c.getText().contains("Selenium Test Lead"));
+            return cells.stream().anyMatch(c -> c.getText().contains(leadName));
         });
 
         var cells = driver.findElements(By.tagName("td"));
-        boolean found = cells.stream().anyMatch(c -> c.getText().contains("Selenium Test Lead"));
+        boolean found = cells.stream().anyMatch(c -> c.getText().contains(leadName));
         assertTrue(found, "Created lead should appear in the leads table");
+        driver.navigate().refresh();
+        wait.until(d -> d.findElements(By.tagName("td")).stream()
+            .anyMatch(c -> c.getText().contains(leadName)));
+        assertTrue(driver.findElements(By.tagName("td")).stream()
+            .anyMatch(c -> c.getText().contains(leadName)), "Created lead must persist after reload");
     }
 
     @Test

@@ -52,7 +52,11 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required"));
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (request.getPassword().length() < 8 || request.getPassword().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72
+                || !request.getEmail().trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Use a valid email and a password of at least 8 characters (maximum 72 bytes)"));
+        }
+        if (userRepository.findByEmail(request.getEmail().trim()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Email already exists"));
         }
@@ -66,7 +70,7 @@ public class UserController {
 
         User user = new User();
         user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        user.setEmail(request.getEmail().trim().toLowerCase(java.util.Locale.ROOT));
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(role);
         user.setCreatedAt(LocalDateTime.now());
@@ -88,12 +92,15 @@ public class UserController {
             user.setName(request.getName());
         }
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            if (!request.getEmail().trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid email"));
+            }
             Optional<User> existing = userRepository.findByEmail(request.getEmail());
             if (existing.isPresent() && !existing.get().getId().equals(id)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("error", "Email already in use"));
             }
-            user.setEmail(request.getEmail());
+            user.setEmail(request.getEmail().trim().toLowerCase(java.util.Locale.ROOT));
         }
         if (request.getRole() != null && !request.getRole().isBlank()) {
             try {

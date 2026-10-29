@@ -1,6 +1,6 @@
 # BLMS Backlog
 
-Updated: 2026-09-02
+Updated: 2026-10-28
 
 ---
 
@@ -17,7 +17,7 @@ Updated: 2026-09-02
 | US-07 | As a broker, I can edit all fields of an existing lead | feature/lead-detail-edit | v1.0.0 |
 | US-08 | As a manager, I can delete a lead record | feature/lead-detail-edit | v1.0.0 |
 | US-09 | As a manager, I can set a lead to Converted or Lost; brokers cannot | feature/lead-detail-edit | v1.0.0 |
-| US-10 | As a user, real BCrypt authentication and role-based access control | feature/auth-refinement | v1.1.0 |
+| US-10 | As a user, BCrypt login, server sessions, CSRF, and backend role-based access control | feature/auth-refinement | v1.1.0 |
 | US-11 | As ops, Jenkins CI job runs automated build & JUnit test suites on every commit | feature/jenkins-ci | v1.1.0 |
 | US-12 | As ops, declarative Jenkinsfile controls build, test, and artifact packaging | feature/jenkins-ci | v1.1.0 |
 | US-13 | As QA, automated Selenium WebDriver test suite covers critical user journeys | feature/selenium-testing | v1.1.0 |
@@ -42,7 +42,8 @@ Updated: 2026-09-02
 
 | ID | Description | Severity |
 |----|-------------|----------|
-| BUG-01 | Login demo credentials stored in plain JS — replace with real JWT auth | High |
-| BUG-02 | Role is hardcoded as MANAGER in App.jsx — should come from auth token | Medium |
-| DEBT-01 | No input sanitisation on backend search query | Medium |
-| DEBT-02 | No pagination on leads list — will degrade at >500 records | Low |
+| DEBT-01 | No pagination on leads list � large datasets require server-side pagination | Low |
+| DEBT-02 | Database migrations and compatible schema rollback need a dedicated migration tool | Medium |
+
+Authentication, role enforcement, and silent demo fallbacks were corrected in the current
+unreleased changes. Historical release entries describe the original milestone scope.

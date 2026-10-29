@@ -2,6 +2,10 @@ package com.blms.selenium;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -13,6 +17,32 @@ public abstract class SeleniumTestBase {
 
     protected WebDriver driver;
     protected WebDriverWait wait;
+
+    @RegisterExtension
+    final InvocationInterceptor failureScreenshot = new InvocationInterceptor() {
+        @Override
+        public void interceptTestMethod(Invocation<Void> invocation,
+                ReflectiveInvocationContext<java.lang.reflect.Method> context,
+                ExtensionContext extensionContext) throws Throwable {
+            try {
+                invocation.proceed();
+            } catch (Throwable failure) {
+                if (driver instanceof org.openqa.selenium.TakesScreenshot screenshots) {
+                    try {
+                        var directory = java.nio.file.Path.of("target", "failure-screenshots");
+                        java.nio.file.Files.createDirectories(directory);
+                        var filename = extensionContext.getRequiredTestClass().getSimpleName() + "-"
+                                + context.getExecutable().getName() + "-" + java.util.UUID.randomUUID() + ".png";
+                        java.nio.file.Files.write(directory.resolve(filename),
+                                screenshots.getScreenshotAs(org.openqa.selenium.OutputType.BYTES));
+                    } catch (Exception captureFailure) {
+                        failure.addSuppressed(captureFailure);
+                    }
+                }
+                throw failure;
+            }
+        }
+    };
 
     protected static String getBaseUrl() {
         String prop = System.getProperty("baseUrl");
@@ -28,27 +58,24 @@ public abstract class SeleniumTestBase {
     }
 
     protected static boolean isServerRunning() {
-        try (var socket = new java.net.Socket()) {
-            socket.connect(new java.net.InetSocketAddress("localhost", 3000), 400);
-            return true;
-        } catch (Exception e) {
-            try (var s2 = new java.net.Socket()) {
-                s2.connect(new java.net.InetSocketAddress("localhost", 5173), 400);
-                return true;
-            } catch (Exception e2) {
-                return false;
-            }
-        }
+        try {
+            var client = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(3)).build();
+            var response = client.send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(BASE_URL))
+                .timeout(Duration.ofSeconds(5)).GET().build(), java.net.http.HttpResponse.BodyHandlers.discarding());
+            return response.statusCode() == 200;
+        } catch (Exception ex) { return false; }
     }
 
     protected static final String BASE_URL = getBaseUrl();
-    protected static final String DEMO_EMAIL = "admin@blms.com";
-    protected static final String DEMO_PASSWORD = "admin123";
+    protected static final String DEMO_EMAIL = System.getenv().getOrDefault("SELENIUM_EMAIL", "admin@blms.com");
+    protected static final String DEMO_PASSWORD = System.getenv().getOrDefault("SELENIUM_PASSWORD", "admin123");
 
     @BeforeEach
     void setUp() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(isServerRunning(),
-                "Live application server is not currently reachable on port 3000 or 5173; skipping browser tests.");
+        org.junit.jupiter.api.Assertions.assertTrue(isServerRunning(),
+                "Application is unavailable at " + BASE_URL + "; start the complete stack before browser tests.");
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless");

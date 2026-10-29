@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "../api";
 import { useState } from "react";
 
 export default function CreateLeadForm({ onLeadCreated }) {
@@ -27,38 +28,19 @@ export default function CreateLeadForm({ onLeadCreated }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/v1/leads", {
+      const res = await apiFetch("/api/v1/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) {
-        // Offline / testing fallback
-        const fallback = {
-          id: Date.now(),
-          ...form,
-          status: "NEW",
-          createdAt: new Date().toISOString(),
-        };
-        setForm({ name: "", contactPhone: "", contactEmail: "", source: "", notes: "" });
-        onLeadCreated(fallback);
-        return;
-      }
+      if (!res.ok) throw await responseError(res, "Unable to save lead");
 
       const created = await res.json();
       setForm({ name: "", contactPhone: "", contactEmail: "", source: "", notes: "" });
       onLeadCreated(created);
     } catch (err) {
-      // Offline fallback
-      const fallback = {
-        id: Date.now(),
-        ...form,
-        status: "NEW",
-        createdAt: new Date().toISOString(),
-      };
-      setForm({ name: "", contactPhone: "", contactEmail: "", source: "", notes: "" });
-      onLeadCreated(fallback);
+      setError(err.message || "Unable to save lead. Please try again.");
     } finally {
       setLoading(false);
     }
