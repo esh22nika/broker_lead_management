@@ -13,7 +13,7 @@
     app_root_dir: /opt/blms
     app_user: blmsuser
     app_group: blmsgroup
-    image_tag: "v1.3.0"
+    image_tag: "latest"
     registry_user: "esh22nika"
     backend_port: 8081
     frontend_port: 80
@@ -34,8 +34,17 @@
     # ------------------------------------------------------------------
     # 2. CONTAINER ORCHESTRATION & DEPLOYMENT
     # ------------------------------------------------------------------
+    - name: Pull versioned images
+      command: docker compose --env-file {{ app_root_dir }}/config/.env -f {{ app_root_dir }}/deploy/docker-compose.yml pull
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        REGISTRY_USER: "{{ registry_user }}"
+
     - name: Pull and start BLMS container stack
-      command: docker compose -f {{ app_root_dir }}/deploy/docker-compose.yml up -d --remove-orphans
+      command: docker compose --env-file {{ app_root_dir }}/config/.env -f {{ app_root_dir }}/deploy/docker-compose.yml up -d --no-build --remove-orphans --wait --wait-timeout 180
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        REGISTRY_USER: "{{ registry_user }}"
       register: compose_up_result
       changed_when: "'Started' in compose_up_result.stdout or 'Created' in compose_up_result.stdout or 'Recreated' in compose_up_result.stdout"
 

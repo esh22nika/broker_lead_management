@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "./api";
 import { useEffect, useState } from "react";
 import LoginPage from "./components/LoginPage";
 import LeadsList from "./components/LeadsList";
@@ -5,81 +6,6 @@ import Dashboard from "./components/Dashboard";
 import UserManagement from "./components/UserManagement";
 import CreateLeadModal from "./components/CreateLeadModal";
 import CreateLeadForm from "./components/CreateLeadForm";
-import SearchBar from "./components/SearchBar";
-
-// Initial realistic Indian real-estate sample leads (used when backend is offline or fresh)
-const INITIAL_DEMO_LEADS = [
-  {
-    id: 101,
-    name: "Rahul Verma",
-    contactPhone: "+91 98201 44521",
-    contactEmail: "rahul.verma@gmail.com",
-    source: "MagicBricks",
-    notes: "Looking for 3 BHK luxury apartment in Bandra West. Budget ₹4.2 Cr. Loan pre-approved with HDFC.",
-    status: "QUALIFIED",
-    createdAt: "2026-10-05T10:30:00Z",
-  },
-  {
-    id: 102,
-    name: "Pooja Mehta",
-    contactPhone: "+91 98334 11290",
-    contactEmail: "pooja.mehta@outlook.com",
-    source: "99acres",
-    notes: "Interested in 2 BHK near Powai IT park. Budget ₹1.8 Cr. Wants ready-to-move property.",
-    status: "CONTACTED",
-    createdAt: "2026-10-06T14:15:00Z",
-  },
-  {
-    id: 103,
-    name: "Amit Shah",
-    contactPhone: "+91 98199 87654",
-    contactEmail: "amit.shah@corpnet.in",
-    source: "Housing.com",
-    notes: "Commercial office space requirement (1500 sq ft) in BKC. High priority client.",
-    status: "NEW",
-    createdAt: "2026-10-07T09:00:00Z",
-  },
-  {
-    id: 104,
-    name: "Sneha Kulkarni",
-    contactPhone: "+91 97654 32109",
-    contactEmail: "sneha.k@tcs.com",
-    source: "Client Referral",
-    notes: "Booked 3 BHK unit in Hiranandani Estate. Token amount ₹5 Lakhs paid. Deal finalized.",
-    status: "CONVERTED",
-    createdAt: "2026-09-28T11:45:00Z",
-  },
-  {
-    id: 105,
-    name: "Vikram Malhotra",
-    contactPhone: "+91 98212 99001",
-    contactEmail: "vikram.m@yahoo.com",
-    source: "Site Visit / Walk-in",
-    notes: "Looking for villa in Alibaug. Budget exceeded expectations. Client postponed purchase to next year.",
-    status: "LOST",
-    createdAt: "2026-09-20T16:20:00Z",
-  },
-  {
-    id: 106,
-    name: "Selenium Test Lead",
-    contactPhone: "+91 98765 43210",
-    contactEmail: "selenium@test.com",
-    source: "Automated Test",
-    notes: "Created by Selenium automated testing suite",
-    status: "NEW",
-    createdAt: "2026-10-15T08:00:00Z",
-  },
-  {
-    id: 107,
-    name: "Searchable Person",
-    contactPhone: "+91 98111 22233",
-    contactEmail: "searchable@example.com",
-    source: "SearchTest",
-    notes: "Automated verification test lead for search querying",
-    status: "CONTACTED",
-    createdAt: "2026-10-15T08:15:00Z",
-  },
-];
 
 function getInitials(name) {
   if (!name) return "U";
@@ -89,23 +15,29 @@ function getInitials(name) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem("blms_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [leads, setLeads] = useState([]);
+  const [pipelineStatus, setPipelineStatus] = useState("ALL");
+  const [loadError, setLoadError] = useState("");
 
-  const [leads, setLeads] = useState(() => {
-    try {
-      const local = localStorage.getItem("blms_leads_cache_v2");
-      return local ? JSON.parse(local) : INITIAL_DEMO_LEADS;
-    } catch {
-      return INITIAL_DEMO_LEADS;
-    }
-  });
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/api/v1/auth/me")
+      .then(async (res) => {
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error("Unable to verify your session. Please sign in again.");
+        return res.json();
+      })
+      .then((data) => { if (!cancelled) setUser(data); })
+      .catch(() => { if (!cancelled) setUser(null); })
+      .finally(() => { if (!cancelled) setCheckingSession(false); });
+    const expire = () => { setUser(null); setLeads([]); };
+    window.addEventListener("blms-session-expired", expire);
+    // Remove obsolete demo identity and shared caches.
+    ["blms_user", "blms_leads_cache_v2", "blms_users_cache"].forEach((key) => localStorage.removeItem(key));
+    return () => { cancelled = true; window.removeEventListener("blms-session-expired", expire); };
+  }, []);
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState("pipeline"); // "pipeline" | "dashboard" | "users"
@@ -117,36 +49,25 @@ export default function App() {
     setTimeout(() => setToastMessage(""), 3500);
   }
 
-  function loadLeads() {
-    fetch("/api/v1/leads")
-      .then((res) => {
-        if (!res.ok) throw new Error();
+  useEffect(() => {
+    if (!user) return;
+    const controller = new AbortController();
+    setLoadError("");
+    apiFetch("/api/v1/leads", { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) throw await responseError(res, "Unable to load leads");
         return res.json();
       })
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setLeads(data);
-          localStorage.setItem("blms_leads_cache_v2", JSON.stringify(data));
-        }
-      })
-      .catch(() => {
-        // Keeps local demo cache if backend is offline
-      });
-  }
-
-  useEffect(() => {
-    if (user) loadLeads();
+      .then((data) => { if (!controller.signal.aborted) setLeads(data); })
+      .catch((err) => { if (!controller.signal.aborted) setLoadError(err.message); });
+    return () => controller.abort();
   }, [refreshKey, user]);
-
-  // Sync leads to local cache
-  useEffect(() => {
-    if (leads && leads.length > 0) {
-      localStorage.setItem("blms_leads_cache_v2", JSON.stringify(leads));
-    }
-  }, [leads]);
 
   function handleLogin(userData) {
     setUser(userData);
+    setPipelineStatus("ALL");
+    setIsCreateModalOpen(false);
+    setLeads([]);
     showToast(`Logged in as ${userData.name || "User"} (${userData.role})`);
     // Default Managers to the Dashboard view, Brokers to the Pipeline view
     if (userData.role === "MANAGER") {
@@ -156,10 +77,13 @@ export default function App() {
     }
   }
 
-  function handleLogout() {
-    fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
-    localStorage.removeItem("blms_user");
-    setUser(null);
+  async function handleLogout() {
+    try {
+      const res = await apiFetch("/api/v1/auth/logout", { method: "POST" });
+      if (!res.ok && res.status !== 401) throw new Error("Unable to sign out. Please try again.");
+      setUser(null);
+      setLeads([]);
+    } catch (err) { showToast(err.message); }
   }
 
   function handleLeadCreated(newLead) {
@@ -180,6 +104,7 @@ export default function App() {
     setLeads((prev) =>
       prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
     );
+    setRefreshKey((key) => key + 1);
     showToast(`Lead "${updatedLead.name}" details updated.`);
   }
 
@@ -189,31 +114,15 @@ export default function App() {
     showToast("Lead record removed.");
   }
 
-  function handleSearch(query) {
-    fetch(`/api/v1/leads/search?q=${encodeURIComponent(query)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) setLeads(data);
-      })
-      .catch(() => {
-        const q = query.toLowerCase();
-        setLeads((prev) =>
-          prev.filter(
-            (l) =>
-              (l.name && l.name.toLowerCase().includes(q)) ||
-              (l.contactEmail && l.contactEmail.toLowerCase().includes(q)) ||
-              (l.source && l.source.toLowerCase().includes(q))
-          )
-        );
-      });
+  function handleSearch() {
+    // LeadsList searches the complete loaded dataset without replacing it.
   }
 
   function handleClearSearch() {
-    loadLeads();
+    setRefreshKey((key) => key + 1);
   }
+
+  if (checkingSession) return <div role="status">Checking session...</div>;
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
@@ -356,7 +265,7 @@ export default function App() {
             </div>
             <Dashboard
               key={refreshKey}
-              onFilterStatus={() => setActiveTab("pipeline")}
+              onFilterStatus={(status) => { setPipelineStatus(status); setActiveTab("pipeline"); }}
             />
           </div>
         )}
@@ -369,7 +278,9 @@ export default function App() {
               <CreateLeadForm onLeadCreated={handleLeadCreated} />
             )}
 
+            {loadError && <div role="alert" className="auth-alert error">{loadError}</div>}
             <LeadsList
+              initialStatus={pipelineStatus}
               leads={leads}
               userRole={userRole}
               canDelete={canDelete}

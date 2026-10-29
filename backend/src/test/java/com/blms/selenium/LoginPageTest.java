@@ -39,7 +39,7 @@ class LoginPageTest extends SeleniumTestBase {
         driver.get(BASE_URL);
         wait.until(d -> d.findElement(By.id("login-email")));
 
-        driver.findElement(By.id("login-email")).sendKeys("wrong@test.com");
+        driver.findElement(By.id("login-email")).sendKeys(DEMO_EMAIL);
         driver.findElement(By.id("login-password")).sendKeys("wrongpass");
         driver.findElement(By.id("login-submit-btn")).click();
 

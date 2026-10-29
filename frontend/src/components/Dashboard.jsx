@@ -1,11 +1,13 @@
+import { apiFetch, responseError } from "../api";
 import { useEffect, useState } from "react";
 
 export default function Dashboard({ onFilterStatus }) {
   const [summary, setSummary] = useState(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/v1/dashboard/summary")
+    apiFetch("/api/v1/dashboard/summary")
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
@@ -15,20 +17,12 @@ export default function Dashboard({ onFilterStatus }) {
         setLoading(false);
       })
       .catch(() => {
-        // Fallback default summary for tests / offline mode
-        setSummary({
-          totalLeads: 5,
-          countsByStatus: {
-            NEW: 1,
-            CONTACTED: 1,
-            QUALIFIED: 1,
-            CONVERTED: 1,
-            LOST: 1,
-          },
-        });
+        setError("Unable to load analytics. Please try again.");
         setLoading(false);
       });
   }, []);
+
+  if (error) return <div role="alert" className="auth-alert error">{error}</div>;
 
   if (loading) {
     return (

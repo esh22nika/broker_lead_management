@@ -27,17 +27,20 @@
     # ------------------------------------------------------------------
     # 2. GRACEFUL SERVICE STOP & REVERSION
     # ------------------------------------------------------------------
-    - name: Stop current failing or unstable application containers
-      command: docker compose -f {{ app_root_dir }}/deploy/docker-compose.yml stop backend frontend
-      ignore_errors: true
+    - name: Pull previous release before replacing running containers
+      command: docker compose --env-file {{ app_root_dir }}/config/.env -f {{ app_root_dir }}/deploy/docker-compose.yml pull backend frontend
+      environment:
+        IMAGE_TAG: "{{ rollback_version }}"
+        REGISTRY_USER: "{{ registry_user }}"
 
-    - name: Revert application container images to previous stable release tag
+    - name: Recreate application containers with previous release
       command: >
-        docker compose -f {{ app_root_dir }}/deploy/docker-compose.yml
-        up -d --no-deps --force-recreate
+        docker compose --env-file {{ app_root_dir }}/config/.env -f {{ app_root_dir }}/deploy/docker-compose.yml
+        up -d --no-build --no-deps --force-recreate --wait --wait-timeout 180
         backend frontend
       environment:
         IMAGE_TAG: "{{ rollback_version }}"
+        REGISTRY_USER: "{{ registry_user }}"
       register: rollback_result
 
     # ------------------------------------------------------------------
@@ -63,4 +66,4 @@
           - "Rollback Status: COMPLETED SUCCESSFULLY"
           - "Current Active Baseline: {{ rollback_version }}"
           - "Service Health: REST API UP on port {{ backend_port }}"
-          - "Zero Downtime Recovery Verified"
+          - "Containers were recreated; brief service interruption is expected"

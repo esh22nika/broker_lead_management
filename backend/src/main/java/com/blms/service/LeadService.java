@@ -66,7 +66,7 @@ public class LeadService {
                 lead.setNotes(request.getNotes());
             }
             if (request.getStatus() != null) {
-                lead.setStatus(LeadStatus.valueOf(request.getStatus()));
+                lead.setStatus(LeadStatus.valueOf(request.getStatus().trim().toUpperCase(Locale.ROOT)));
             }
             lead.setUpdatedAt(LocalDateTime.now());
             return toResponse(leadRepository.save(lead));

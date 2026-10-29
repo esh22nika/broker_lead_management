@@ -1,3 +1,4 @@
+import { apiFetch } from "../api";
 import { useState } from "react";
 
 export default function LoginPage({ onLogin }) {
@@ -12,7 +13,6 @@ export default function LoginPage({ onLogin }) {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
-  const [signupRole, setSignupRole] = useState("BROKER");
 
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -29,43 +29,21 @@ export default function LoginPage({ onLogin }) {
     resetErrors();
     setLoading(true);
 
-    // Known demo accounts
-    const demoAccounts = {
-      "admin@blms.com": { id: 1, name: "System Admin", email: "admin@blms.com", role: "ADMIN" },
-      "manager@blms.com": { id: 2, name: "Rajesh Sharma", email: "manager@blms.com", role: "MANAGER" },
-      "broker@blms.com": { id: 3, name: "Priya Patel", email: "broker@blms.com", role: "BROKER" },
-    };
-
     try {
-      const res = await fetch("/api/v1/auth/login", {
+      const res = await apiFetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
       });
 
       if (!res.ok) {
-        // Fallback demo credentials if backend is down or offline
-        if (demoAccounts[loginEmail.trim()] && loginPassword.length >= 6) {
-          const user = demoAccounts[loginEmail.trim()];
-          localStorage.setItem("blms_user", JSON.stringify(user));
-          onLogin(user);
-          return;
-        }
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Invalid credentials (${res.status})`);
       }
 
       const data = await res.json();
-      localStorage.setItem("blms_user", JSON.stringify(data));
       onLogin(data);
     } catch (err) {
-      // Seamless offline fallback for demo accounts
-      if (demoAccounts[loginEmail.trim()]) {
-        const user = demoAccounts[loginEmail.trim()];
-        localStorage.setItem("blms_user", JSON.stringify(user));
-        onLogin(user);
-        return;
-      }
       setError(err.message || "Invalid credentials. Please check your email and password.");
     } finally {
       setLoading(false);
@@ -81,8 +59,8 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
-    if (signupPassword.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (signupPassword.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -94,60 +72,30 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/v1/auth/register", {
+      const res = await apiFetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: signupName.trim(),
           email: signupEmail.trim(),
           password: signupPassword,
-          role: signupRole,
+          role: "BROKER",
         }),
       });
 
       if (!res.ok) {
-        // If backend is unreachable or returning proxy error (e.g. 500/502/404), fall back to client session
-        if (res.status >= 500 || res.status === 404) {
-          const fallbackUser = {
-            id: Date.now(),
-            name: signupName.trim(),
-            email: signupEmail.trim(),
-            role: signupRole,
-          };
-          localStorage.setItem("blms_user", JSON.stringify(fallbackUser));
-          setSuccessMsg("Account created! Signing you in...");
-          setTimeout(() => onLogin(fallbackUser), 500);
-          return;
-        }
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Registration failed (${res.status})`);
       }
 
       const data = await res.json();
-      localStorage.setItem("blms_user", JSON.stringify(data));
       setSuccessMsg("Account created! Signing you in...");
-      setTimeout(() => onLogin(data), 500);
+      onLogin(data);
     } catch (err) {
-      // Offline fallback: create local user session so you are never blocked
-      const fallbackUser = {
-        id: Date.now(),
-        name: signupName.trim(),
-        email: signupEmail.trim(),
-        role: signupRole,
-      };
-      localStorage.setItem("blms_user", JSON.stringify(fallbackUser));
-      setSuccessMsg("Account created! Signing you in...");
-      setTimeout(() => onLogin(fallbackUser), 500);
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
-  }
-
-  function fillDemo(email, password) {
-    setMode("login");
-    resetErrors();
-    setLoginEmail(email);
-    setLoginPassword(password);
   }
 
   return (
@@ -363,38 +311,7 @@ export default function LoginPage({ onLogin }) {
               </div>
             </div>
 
-            <div className="form-field">
-              <label>Select Team Role</label>
-              <div className="role-selector-cards">
-                <label className={`role-card-option ${signupRole === "BROKER" ? "selected" : ""}`}>
-                  <input
-                    type="radio"
-                    name="signupRole"
-                    value="BROKER"
-                    checked={signupRole === "BROKER"}
-                    onChange={(e) => setSignupRole(e.target.value)}
-                  />
-                  <div className="role-card-info">
-                    <span className="role-card-title">Property Consultant (Broker)</span>
-                    <span className="role-card-desc">Add prospects, update status to Contacted / Qualified</span>
-                  </div>
-                </label>
-
-                <label className={`role-card-option ${signupRole === "MANAGER" ? "selected" : ""}`}>
-                  <input
-                    type="radio"
-                    name="signupRole"
-                    value="MANAGER"
-                    checked={signupRole === "MANAGER"}
-                    onChange={(e) => setSignupRole(e.target.value)}
-                  />
-                  <div className="role-card-info">
-                    <span className="role-card-title">Branch / Sales Manager</span>
-                    <span className="role-card-desc">Full pipeline authority: Converted/Lost, deletes & analytics</span>
-                  </div>
-                </label>
-              </div>
-            </div>
+            <p>New accounts join as brokers. An administrator can assign manager access.</p>
 
             <button type="submit" className="auth-submit-btn" disabled={loading}>
               {loading ? (
@@ -411,44 +328,7 @@ export default function LoginPage({ onLogin }) {
           </form>
         )}
 
-        {/* Demo Accounts Panel */}
-        <div className="demo-accounts-panel">
-          <div className="demo-header">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/>
-            </svg>
-            <span>One-Click Test Accounts</span>
-          </div>
-          <div className="demo-chips-grid">
-            <button
-              type="button"
-              className="demo-chip-btn"
-              onClick={() => fillDemo("admin@blms.com", "admin123")}
-              title="Click to fill System Admin account"
-            >
-              <span className="chip-badge admin">ADMIN</span>
-              <span className="chip-email">admin@blms.com (System Admin)</span>
-            </button>
-            <button
-              type="button"
-              className="demo-chip-btn"
-              onClick={() => fillDemo("manager@blms.com", "manager123")}
-              title="Click to fill Branch Manager account"
-            >
-              <span className="chip-badge manager">MANAGER</span>
-              <span className="chip-email">manager@blms.com (Rajesh Sharma)</span>
-            </button>
-            <button
-              type="button"
-              className="demo-chip-btn"
-              onClick={() => fillDemo("broker@blms.com", "broker123")}
-              title="Click to fill Property Consultant account"
-            >
-              <span className="chip-badge broker">BROKER</span>
-              <span className="chip-email">broker@blms.com (Priya Patel)</span>
-            </button>
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { apiFetch, responseError } from "../api";
 import { useEffect, useState } from "react";
 
 function getInitials(name) {
@@ -16,10 +17,13 @@ export default function UserManagement() {
   const [search, setSearch] = useState("");
 
   function loadUsers() {
-    fetch("/api/v1/users")
-      .then((res) => res.json())
+    apiFetch("/api/v1/users")
+      .then(async (res) => {
+        if (!res.ok) throw await responseError(res, "Unable to load users");
+        return res.json();
+      })
       .then(setUsers)
-      .catch(() => setUsers([]));
+      .catch((err) => setError(err.message));
   }
 
   useEffect(() => { loadUsers(); }, []);
@@ -29,32 +33,42 @@ export default function UserManagement() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/users", {
+      const res = await apiFetch("/api/v1/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       if (!res.ok) {
+
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to create user account.");
       }
+      const createdUser = await res.json();
+      setUsers((prev) => {
+        const next = [...prev, createdUser];
+        return next;
+      });
       setForm({ name: "", email: "", password: "", role: "BROKER" });
       setShowModal(false);
-      loadUsers();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unable to create account.");
     } finally {
       setLoading(false);
     }
   }
 
   async function toggleActive(user) {
-    await fetch(`/api/v1/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !user.active }),
-    });
-    loadUsers();
+    setError("");
+    try {
+      const res = await apiFetch(`/api/v1/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !user.active }),
+      });
+      if (!res.ok) throw await responseError(res, "Unable to update account");
+      const updated = await res.json();
+      setUsers((prev) => prev.map((u) => u.id === user.id ? updated : u));
+    } catch (err) { setError(err.message || "Unable to update account."); }
   }
 
   const filteredUsers = users.filter((u) => {
@@ -65,6 +79,7 @@ export default function UserManagement() {
 
   return (
     <div className="section-card">
+      {error && !showModal && <div role="alert" className="auth-alert error">{error}</div>}
       <div className="section-card-header">
         <div className="section-title-wrap">
           <svg className="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,7 +99,7 @@ export default function UserManagement() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          <span>+ Add Member</span>
+          <span>Add Member</span>
         </button>
       </div>
 
@@ -114,7 +129,14 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u) => (
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)" }}>
+                    No team members found matching your criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => (
                 <tr key={u.id} className="lead-row">
                   <td>
                     <div className="lead-avatar-cell">
@@ -150,7 +172,7 @@ export default function UserManagement() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

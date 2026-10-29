@@ -3,10 +3,15 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  preview: {
+    proxy: {
+      "/api": process.env.BLMS_BACKEND_URL || "http://localhost:8081",
+    },
+  },
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:8081",
+      "/api": process.env.BLMS_BACKEND_URL || "http://localhost:8081",
     },
   },
 });

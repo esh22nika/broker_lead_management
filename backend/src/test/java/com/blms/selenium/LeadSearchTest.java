@@ -10,20 +10,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Search Leads - Selenium Tests")
 class LeadSearchTest extends SeleniumTestBase {
+    private String leadName;
 
     @BeforeEach
     void loginAndCreateTestData() {
         login();
 
+        leadName = "Searchable Person " + java.util.UUID.randomUUID();
         // Create a lead to search for
-        driver.findElement(By.cssSelector("input[name='name']")).sendKeys("Searchable Person");
+        driver.findElement(By.cssSelector("input[name='name']")).sendKeys(leadName);
         driver.findElement(By.cssSelector("input[name='contactEmail']")).sendKeys("searchable@example.com");
         driver.findElement(By.cssSelector("input[name='source']")).sendKeys("SearchTest");
         driver.findElement(By.cssSelector("button.btn-primary")).click();
 
         wait.until(d -> {
             var cells = d.findElements(By.tagName("td"));
-            return cells.stream().anyMatch(c -> c.getText().contains("Searchable Person"));
+            return cells.stream().anyMatch(c -> c.getText().contains(leadName));
         });
     }
 
@@ -37,11 +39,11 @@ class LeadSearchTest extends SeleniumTestBase {
 
         wait.until(d -> {
             var cells = d.findElements(By.tagName("td"));
-            return cells.stream().anyMatch(c -> c.getText().contains("Searchable Person"));
+            return cells.stream().anyMatch(c -> c.getText().contains(leadName));
         });
 
         var cells = driver.findElements(By.tagName("td"));
-        boolean found = cells.stream().anyMatch(c -> c.getText().contains("Searchable Person"));
+        boolean found = cells.stream().anyMatch(c -> c.getText().contains(leadName));
         assertTrue(found, "Search results should contain the matching lead");
     }
 

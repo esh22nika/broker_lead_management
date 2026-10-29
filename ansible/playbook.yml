@@ -32,6 +32,12 @@
 
   tasks:
 
+    - name: Require a database password from Ansible Vault or environment
+      assert:
+        that: db_password | default(lookup('env', 'DB_PASSWORD'), true) | length > 0
+        fail_msg: "Set db_password through Ansible Vault or export DB_PASSWORD"
+      no_log: true
+
     # ------------------------------------------------------------------
     # 1. SYSTEM UPDATES & PACKAGE PREREQUISITES
     # ------------------------------------------------------------------
@@ -97,13 +103,13 @@
         group: "{{ app_group }}"
         mode: '0600'
         content: |
-          # BLMS Environment Configuration
-          SPRING_PROFILES_ACTIVE=prod
-          SERVER_PORT={{ backend_port }}
-          SPRING_DATASOURCE_URL=jdbc:postgresql://blms-postgres:5432/blms
-          SPRING_DATASOURCE_USERNAME=postgres
-          SPRING_DATASOURCE_PASSWORD=root
-          SPRING_JPA_HIBERNATE_DDL_AUTO=update
+          DB_USERNAME={{ db_username | default('blms_user') }}
+          DB_PASSWORD='{{ db_password | default(lookup('env', 'DB_PASSWORD'), true) | replace("'", "\\'") }}'
+          BLMS_ADMIN_EMAIL={{ admin_email | default('admin@blms.com') }}
+          BLMS_ADMIN_PASSWORD='{{ admin_password | default(lookup('env', 'BLMS_ADMIN_PASSWORD'), true) | replace("'", "\\'") }}'
+          BLMS_DEMO_DATA=false
+          SESSION_COOKIE_SECURE={{ session_cookie_secure | default(false) | string | lower }}
+      no_log: true
 
     - name: Configure logrotate for BLMS application logs
       copy:

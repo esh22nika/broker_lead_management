@@ -18,6 +18,9 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root application user for container security
 RUN groupadd -r blmsgroup && useradd -r -g blmsgroup -m blmsuser
 
